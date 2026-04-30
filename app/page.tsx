@@ -240,15 +240,15 @@ export default function Home() {
     시험항목 종류
   </label>
   <select
-    className="border p-2 w-full"
-    value={sampleType}
-    onChange={(e) => setRequestType(e.target.value)}
-  >
-    <option value="액체원료">액체원료</option>
-    <option value="고체원료">고체원료</option>
-    <option value="중간체">중간체</option>
-    <option value="제품">제품</option>
-  </select>
+  className="border p-2 w-full"
+  value={sampleType}
+  onChange={(e) => setSampleType(e.target.value)}
+>
+  <option value="액체원료">액체원료</option>
+  <option value="고체원료">고체원료</option>
+  <option value="중간체">중간체</option>
+  <option value="제품">제품</option>
+</select>
 </div>
 
     <button
