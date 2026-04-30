@@ -73,7 +73,6 @@ export default function Home() {
       labelQty,
       requestNo: autoRequestNo,
       reportNo: autoReportNo,
-      requestDate: new Date().toLocaleDateString(),
       
     }
 
