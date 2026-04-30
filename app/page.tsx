@@ -114,7 +114,7 @@ export default function Home() {
           onClick={() => setActiveTab('request')}
           className="border px-4 py-2"
         >
-          시험의뢰서
+          시험의뢰
         </button>
         <button
           onClick={() => setActiveTab('ledger')}
@@ -126,7 +126,7 @@ export default function Home() {
           onClick={() => setActiveTab('result')}
           className="border px-4 py-2"
         >
-          시험결과통보서
+          시험결과통보
         </button>
       </div>
 
