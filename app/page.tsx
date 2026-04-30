@@ -38,10 +38,14 @@ export default function Home() {
     const day = String(today.getDate()).padStart(2, '0')
     const datePart = `${year}${month}${day}`
 
-    let prefix = ''
-    if (sampleType === '액체원료') prefix = 'ER'
-    else if (sampleType === '제품') prefix = 'EP'
-    else if (sampleType === '중간체') prefix = 'EB'
+    let prefixMap: { [key: string]: string } = {
+  '액체원료': 'ER',
+  '고체원료': 'ER',
+  '제품': 'EP',
+  '중간체': 'EB',
+    }
+    
+    let prefix = prefixMap[sampleType] || 'ER'
 
     const sameDayCount = requestList.filter((item) =>
       item.requestNo?.startsWith(prefix + datePart)
@@ -231,17 +235,21 @@ export default function Home() {
       </option>
     </select>
 
-    <select
-      className="border p-2 w-full"
-      value={sampleType}
-      onChange={(e) =>
-        setSampleType(e.target.value)
-      }
-    >
-      <option>액체원료</option>
-      <option>제품</option>
-      <option>중간체</option>
-    </select>
+    <div className="mb-4">
+  <label className="block mb-1 font-semibold">
+    시험항목 종류
+  </label>
+  <select
+    className="border p-2 w-full"
+    value={sampleType}
+    onChange={(e) => setRequestType(e.target.value)}
+  >
+    <option value="액체원료">액체원료</option>
+    <option value="고체원료">고체원료</option>
+    <option value="중간체">중간체</option>
+    <option value="제품">제품</option>
+  </select>
+</div>
 
     <button
       onClick={saveData}
@@ -279,6 +287,7 @@ export default function Home() {
       <thead>
         <tr>
           <th className="border p-2">No.</th>
+          <th className="border p-2">시험항목</th>
           <th className="border p-2">의뢰일</th>
           <th className="border p-2">의뢰번호</th>
           <th className="border p-2">성적번호</th>
@@ -309,6 +318,7 @@ export default function Home() {
           .map((item, index) => (
             <tr key={index}>
               <td className="border p-2">{index + 1}</td>
+              <td className="border p-2">{item.sampleType}</td>
               <td className="border p-2">{item.requestDate}</td>
               <td className="border p-2">{item.requestNo}</td>
               <td className="border p-2">{item.reportNo}</td>
@@ -347,6 +357,7 @@ export default function Home() {
       <thead>
   <tr>
     <th className="border p-2">No.</th>
+    <th className="border p-2">시험항목</th>
     <th className="border p-2">성적번호</th>
     <th className="border p-2">품목명</th>
     <th className="border p-2">판정결과</th>
@@ -359,6 +370,7 @@ export default function Home() {
         {requestList.map((item, index) => (
           <tr key={index}>
             <td className="border p-2">{index + 1}</td>
+            <td className="border p-2">{item.sampleType}</td>
             <td className="border p-2">{item.reportNo}</td>
             <td className="border p-2">{item.productName}</td>
 
