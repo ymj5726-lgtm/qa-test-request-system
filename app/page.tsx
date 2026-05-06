@@ -3,10 +3,10 @@
 import { useEffect, useState } from 'react'
 import PocketBase from 'pocketbase'
 
-const pb = new PocketBase('http://192.168.70.27:8090')
+const pb = new PocketBase('http://125.251.141.230:8090')
 
 type RequestItem = {
-  id: string
+  id?: string
   requester?: string
   productName?: string
   lotNo?: string
@@ -28,8 +28,10 @@ type RequestItem = {
 export default function Home() {
   const [activeTab, setActiveTab] = useState('request')
   const [requestList, setRequestList] = useState<RequestItem[]>([])
+
   const today = new Date().toISOString().split('T')[0]
 
+  // 기존 상태 그대로 유지
   const [productName, setProductName] = useState('O0330')
   const [lotNo, setLotNo] = useState('')
   const [sampleType, setSampleType] = useState('액체원료')
@@ -41,20 +43,16 @@ export default function Home() {
   const [department, setDepartment] = useState('음성공장 합성팀')
   const [remarks, setRemarks] = useState('')
 
+  // ✅ 로그인 + 데이터 로드
   useEffect(() => {
-    const login = async () => {
-    try {
+    const init = async () => {
       await pb.admins.authWithPassword(
         'admin@admin.com',
         'admin1234'
       )
       loadData()
-    } catch (err) {
-      console.error(err)
     }
-  }
-
-  login()
+    init()
   }, [])
 
   const loadData = async () => {
@@ -67,6 +65,7 @@ export default function Home() {
     setRequestList(data)
   }
 
+  // ✅ 의뢰번호 생성 (기존 그대로)
   const generateRequestNo = () => {
     const date = new Date()
     const yy = String(date.getFullYear()).slice(-2)
@@ -74,7 +73,7 @@ export default function Home() {
     const dd = String(date.getDate()).padStart(2, '0')
     const datePart = `${yy}${mm}${dd}`
 
-    const prefixMap: { [key: string]: string } = {
+    const prefixMap: any = {
       액체원료: 'ER',
       고체원료: 'ER',
       제품: 'EP',
@@ -92,6 +91,7 @@ export default function Home() {
     ).padStart(2, '0')}`
   }
 
+  // ✅ 저장
   const saveData = async () => {
     const requestNo = generateRequestNo()
     const reportNo = `Q${requestNo}`
@@ -118,23 +118,18 @@ export default function Home() {
     loadData()
   }
 
+  // ✅ 삭제
   const deleteItem = async (id: string) => {
-    const confirmDelete = window.confirm('삭제하시겠습니까?')
-    if (!confirmDelete) return
-
+    if (!confirm('삭제하시겠습니까?')) return
     await pb.collection('test_requests').delete(id)
     loadData()
   }
 
-  const updateResult = async (
-    id: string,
-    field: string,
-    value: string
-  ) => {
+  // ✅ 결과 업데이트
+  const updateItem = async (id: string, field: string, value: string) => {
     await pb.collection('test_requests').update(id, {
       [field]: value,
     })
-
     loadData()
   }
 
@@ -144,70 +139,76 @@ export default function Home() {
         시험 의뢰 관리 시스템
       </h1>
 
+      {/* 탭 */}
       <div className="flex gap-3 mb-8">
-        <button onClick={() => setActiveTab('request')}>
-          시험의뢰
-        </button>
-        <button onClick={() => setActiveTab('ledger')}>
-          접수대장
-        </button>
-        <button onClick={() => setActiveTab('result')}>
-          시험결과통보
-        </button>
+        <button onClick={() => setActiveTab('request')}>시험의뢰</button>
+        <button onClick={() => setActiveTab('ledger')}>접수대장</button>
+        <button onClick={() => setActiveTab('result')}>시험결과통보</button>
       </div>
 
+      {/* ================= 시험의뢰 ================= */}
       {activeTab === 'request' && (
         <div className="space-y-3">
-          <input
-            className="border p-2 w-full"
-            placeholder="품명"
-            value={productName}
-            onChange={(e) =>
-              setProductName(e.target.value)
-            }
-          />
 
-          <input
-            className="border p-2 w-full"
-            placeholder="제조번호"
-            value={lotNo}
-            onChange={(e) => setLotNo(e.target.value)}
-          />
-
+          {/* ✅ 품목 옵션 그대로 유지 */}
           <select
             className="border p-2 w-full"
-            value={sampleType}
-            onChange={(e) =>
-              setSampleType(e.target.value)
-            }
+            value={productName}
+            onChange={(e) => setProductName(e.target.value)}
           >
-            <option>액체원료</option>
-            <option>고체원료</option>
-            <option>제품</option>
-            <option>중간체</option>
+            <option value="O0330">O0330</option>
+            <option value="O0711">O0711</option>
+            <option value="O0731">O0731</option>
+            <option value="O0830">O0830</option>
+            <option value="G0720">G0720</option>
+            <option value="LX0556">LX0556</option>
+            <option value="LX0566">LX0566</option>
+            <option value="DCPM-383">DCPM-383</option>
+            <option value="HTM-K940">HTM-K940</option>
+            <option value="LHT-6634">LHT-6634</option>
+            <option value="GP-A079">GP-A079</option>
+            <option value="ACT">ACT</option>
+            <option value="EA">EA</option>
+            <option value="EtOH(99.5%)">EtOH(99.5%)</option>
+            <option value="MC">MC</option>
+            <option value="MCB">MCB</option>
+            <option value="THF">THF</option>
+            <option value="MeOH">MeOH</option>
+            <option value="TOL">TOL</option>
+            <option value="Xylene">Xylene</option>
+            <option value="HEP">HEP</option>
+            <option value="EDC">EDC</option>
           </select>
 
-          <button
-            onClick={saveData}
-            className="bg-black text-white px-4 py-2"
-          >
+          <input className="border p-2 w-full" placeholder="제조번호" value={lotNo} onChange={(e) => setLotNo(e.target.value)} />
+          <input className="border p-2 w-full" placeholder="제조자 / 납품자" value={manufacturerSupplier} onChange={(e) => setManufacturerSupplier(e.target.value)} />
+          <input type="date" className="border p-2 w-full" value={manufactureDate} onChange={(e) => setManufactureDate(e.target.value)} />
+          <input className="border p-2 w-full" placeholder="용기 수량" value={containerQty} onChange={(e) => setContainerQty(e.target.value)} />
+          <input className="border p-2 w-full" placeholder="입고 수량" value={totalQty} onChange={(e) => setTotalQty(e.target.value)} />
+          <input type="date" className="border p-2 w-full" value={requestDate} onChange={(e) => setRequestDate(e.target.value)} />
+
+          <select className="border p-2 w-full" value={department} onChange={(e) => setDepartment(e.target.value)}>
+            <option value="음성공장 합성팀">음성공장 합성팀</option>
+            <option value="음성공장 품질팀">음성공장 품질팀</option>
+            <option value="화성공장">화성공장</option>
+          </select>
+
+          <select className="border p-2 w-full" value={sampleType} onChange={(e) => setSampleType(e.target.value)}>
+            <option value="액체원료">액체원료</option>
+            <option value="고체원료">고체원료</option>
+            <option value="중간체">중간체</option>
+            <option value="제품">제품</option>
+          </select>
+
+          <button onClick={saveData} className="bg-black text-white px-4 py-2">
             저장
           </button>
         </div>
       )}
 
+      {/* ================= 접수대장 ================= */}
       {activeTab === 'ledger' && (
-        <table className="w-full border">
-          <thead>
-            <tr>
-              <th>No.</th>
-              <th>시험항목</th>
-              <th>의뢰번호</th>
-              <th>성적번호</th>
-              <th>품명</th>
-              <th>삭제</th>
-            </tr>
-          </thead>
+        <table className="w-full border text-sm">
           <tbody>
             {requestList.map((item, index) => (
               <tr key={item.id}>
@@ -217,13 +218,7 @@ export default function Home() {
                 <td>{item.reportNo}</td>
                 <td>{item.productName}</td>
                 <td>
-                  <button
-                    onClick={() =>
-                      deleteItem(item.id)
-                    }
-                  >
-                    삭제
-                  </button>
+                  <button onClick={() => deleteItem(item.id!)}>삭제</button>
                 </td>
               </tr>
             ))}
@@ -231,6 +226,7 @@ export default function Home() {
         </table>
       )}
 
+      {/* ================= 결과 ================= */}
       {activeTab === 'result' && (
         <table className="w-full border">
           <tbody>
@@ -239,22 +235,43 @@ export default function Home() {
                 <td>{index + 1}</td>
                 <td>{item.reportNo}</td>
                 <td>{item.productName}</td>
+
                 <td>
                   <select
                     value={item.judgement || ''}
                     onChange={(e) =>
-                      updateResult(
-                        item.id,
-                        'judgement',
-                        e.target.value
-                      )
+                      updateItem(item.id!, 'judgement', e.target.value)
                     }
                   >
                     <option value="">선택</option>
                     <option value="적합">적합</option>
-                    <option value="부적합">
-                      부적합
-                    </option>
+                    <option value="부적합">부적합</option>
+                  </select>
+                </td>
+
+                <td>
+                  <input
+                    type="date"
+                    value={item.judgementDate || today}
+                    onChange={(e) =>
+                      updateItem(item.id!, 'judgementDate', e.target.value)
+                    }
+                  />
+                </td>
+
+                <td>
+                  <select
+                    value={item.labelQty || '없음'}
+                    onChange={(e) =>
+                      updateItem(item.id!, 'labelQty', e.target.value)
+                    }
+                  >
+                    <option value="없음">없음</option>
+                    {Array.from({ length: 500 }, (_, i) => (
+                      <option key={i} value={String(i + 1)}>
+                        {i + 1}매
+                      </option>
+                    ))}
                   </select>
                 </td>
               </tr>
