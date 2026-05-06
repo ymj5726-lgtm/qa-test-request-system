@@ -1,37 +1,16 @@
 'use client'
 
-import { useEffect, useState } from 'react'
 import PocketBase from 'pocketbase'
+import { useEffect, useState } from 'react'
 
 const pb = new PocketBase('http://125.251.141.230:8090')
 
-type RequestItem = {
-  id?: string
-  requester?: string
-  productName?: string
-  lotNo?: string
-  sampleType?: string
-  manufacturerSupplier?: string
-  manufactureDate?: string
-  containerQty?: string
-  totalQty?: string
-  requestDate?: string
-  department?: string
-  remarks?: string
-  judgementDate?: string
-  judgement?: string
-  labelQty?: string
-  requestNo?: string
-  reportNo?: string
-}
-
 export default function Home() {
   const [activeTab, setActiveTab] = useState('request')
-  const [requestList, setRequestList] = useState<RequestItem[]>([])
+  const [requestList, setRequestList] = useState<any[]>([])
 
   const today = new Date().toISOString().split('T')[0]
 
-  // 기존 상태 그대로 유지
   const [productName, setProductName] = useState('O0330')
   const [lotNo, setLotNo] = useState('')
   const [sampleType, setSampleType] = useState('액체원료')
@@ -43,35 +22,25 @@ export default function Home() {
   const [department, setDepartment] = useState('음성공장 합성팀')
   const [remarks, setRemarks] = useState('')
 
-  // ✅ 로그인 + 데이터 로드
+  // ✅ 데이터 불러오기
   useEffect(() => {
-    const init = async () => {
-      await pb.admins.authWithPassword(
-        'admin@admin.com',
-        'admin1234'
-      )
-      loadData()
-    }
-    init()
+    loadData()
   }, [])
 
   const loadData = async () => {
-    const data = await pb
-      .collection('test_requests')
-      .getFullList<RequestItem>({
-        sort: '-created',
-      })
-
+    const data = await pb.collection('test_requests').getFullList({
+      sort: '-created',
+    })
     setRequestList(data)
   }
 
   // ✅ 의뢰번호 생성 (기존 그대로)
-  const generateRequestNo = () => {
-    const date = new Date()
-    const yy = String(date.getFullYear()).slice(-2)
-    const mm = String(date.getMonth() + 1).padStart(2, '0')
-    const dd = String(date.getDate()).padStart(2, '0')
-    const datePart = `${yy}${mm}${dd}`
+  const generateRequestNo = (sampleType: string) => {
+    const today = new Date()
+    const year = String(today.getFullYear()).slice(-2)
+    const month = String(today.getMonth() + 1).padStart(2, '0')
+    const day = String(today.getDate()).padStart(2, '0')
+    const datePart = `${year}${month}${day}`
 
     const prefixMap: any = {
       액체원료: 'ER',
@@ -86,15 +55,15 @@ export default function Home() {
       item.requestNo?.startsWith(prefix + datePart)
     ).length
 
-    return `${prefix}${datePart}${String(
-      sameDayCount + 1
-    ).padStart(2, '0')}`
+    const serial = String(sameDayCount + 1).padStart(2, '0')
+
+    return `${prefix}${datePart}${serial}`
   }
 
   // ✅ 저장
   const saveData = async () => {
-    const requestNo = generateRequestNo()
-    const reportNo = `Q${requestNo}`
+    const autoRequestNo = generateRequestNo(sampleType)
+    const autoReportNo = `Q${autoRequestNo}`
 
     await pb.collection('test_requests').create({
       productName,
@@ -107,26 +76,26 @@ export default function Home() {
       requestDate,
       department,
       remarks,
-      judgement: '',
       judgementDate: today,
+      judgement: '',
       labelQty: '없음',
-      requestNo,
-      reportNo,
+      requestNo: autoRequestNo,
+      reportNo: autoReportNo,
     })
 
-    alert(`저장 완료\n의뢰번호: ${requestNo}`)
+    alert(`저장 완료\n의뢰번호: ${autoRequestNo}`)
     loadData()
   }
 
-  // ✅ 삭제
+  // ✅ 삭제 (id 기준)
   const deleteItem = async (id: string) => {
-    if (!confirm('삭제하시겠습니까?')) return
+    if (!confirm('선택한 의뢰를 삭제하시겠습니까?')) return
     await pb.collection('test_requests').delete(id)
     loadData()
   }
 
-  // ✅ 결과 업데이트
-  const updateItem = async (id: string, field: string, value: string) => {
+  // ✅ 수정 공통 함수
+  const updateField = async (id: string, field: string, value: any) => {
     await pb.collection('test_requests').update(id, {
       [field]: value,
     })
@@ -139,11 +108,10 @@ export default function Home() {
         시험 의뢰 관리 시스템
       </h1>
 
-      {/* 탭 */}
       <div className="flex gap-3 mb-8">
-        <button onClick={() => setActiveTab('request')}>시험의뢰</button>
-        <button onClick={() => setActiveTab('ledger')}>접수대장</button>
-        <button onClick={() => setActiveTab('result')}>시험결과통보</button>
+        <button onClick={() => setActiveTab('request')} className="border px-4 py-2">시험의뢰</button>
+        <button onClick={() => setActiveTab('ledger')} className="border px-4 py-2">접수대장</button>
+        <button onClick={() => setActiveTab('result')} className="border px-4 py-2">시험결과통보</button>
       </div>
 
       {/* ================= 시험의뢰 ================= */}
@@ -151,11 +119,7 @@ export default function Home() {
         <div className="space-y-3">
 
           {/* ✅ 품목 옵션 그대로 유지 */}
-          <select
-            className="border p-2 w-full"
-            value={productName}
-            onChange={(e) => setProductName(e.target.value)}
-          >
+          <select className="border p-2 w-full" value={productName} onChange={(e) => setProductName(e.target.value)}>
             <option value="O0330">O0330</option>
             <option value="O0711">O0711</option>
             <option value="O0731">O0731</option>
@@ -214,11 +178,21 @@ export default function Home() {
               <tr key={item.id}>
                 <td>{index + 1}</td>
                 <td>{item.sampleType}</td>
+                <td>{item.requestDate}</td>
                 <td>{item.requestNo}</td>
                 <td>{item.reportNo}</td>
                 <td>{item.productName}</td>
+                <td>{item.lotNo}</td>
+                <td>{item.manufacturerSupplier}</td>
+                <td>{item.manufactureDate}</td>
+                <td>{item.containerQty}</td>
+                <td>{item.totalQty}</td>
+                <td>{item.department}</td>
+                <td>{item.remarks}</td>
                 <td>
-                  <button onClick={() => deleteItem(item.id!)}>삭제</button>
+                  <button onClick={() => deleteItem(item.id)} className="border px-2 py-1">
+                    삭제
+                  </button>
                 </td>
               </tr>
             ))}
@@ -233,6 +207,7 @@ export default function Home() {
             {requestList.map((item, index) => (
               <tr key={item.id}>
                 <td>{index + 1}</td>
+                <td>{item.sampleType}</td>
                 <td>{item.reportNo}</td>
                 <td>{item.productName}</td>
 
@@ -240,7 +215,7 @@ export default function Home() {
                   <select
                     value={item.judgement || ''}
                     onChange={(e) =>
-                      updateItem(item.id!, 'judgement', e.target.value)
+                      updateField(item.id, 'judgement', e.target.value)
                     }
                   >
                     <option value="">선택</option>
@@ -254,7 +229,7 @@ export default function Home() {
                     type="date"
                     value={item.judgementDate || today}
                     onChange={(e) =>
-                      updateItem(item.id!, 'judgementDate', e.target.value)
+                      updateField(item.id, 'judgementDate', e.target.value)
                     }
                   />
                 </td>
@@ -263,7 +238,7 @@ export default function Home() {
                   <select
                     value={item.labelQty || '없음'}
                     onChange={(e) =>
-                      updateItem(item.id!, 'labelQty', e.target.value)
+                      updateField(item.id, 'labelQty', e.target.value)
                     }
                   >
                     <option value="없음">없음</option>
@@ -273,6 +248,12 @@ export default function Home() {
                       </option>
                     ))}
                   </select>
+                </td>
+
+                <td>
+                  <button onClick={() => deleteItem(item.id)} className="border px-2 py-1">
+                    삭제
+                  </button>
                 </td>
               </tr>
             ))}
