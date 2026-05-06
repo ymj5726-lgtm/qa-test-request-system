@@ -3,38 +3,63 @@
 import PocketBase from 'pocketbase'
 import { useEffect, useState } from 'react'
 
+// ✅ 외부 접속 가능한 주소로 유지 (중요)
 const pb = new PocketBase('http://125.251.141.230:8090')
 
 export default function Home() {
   const [activeTab, setActiveTab] = useState('request')
+  const [requester, setRequester] = useState('')
+  const [lotNo, setLotNo] = useState('')
+  const [sampleType, setSampleType] = useState('액체원료')
   const [requestList, setRequestList] = useState<any[]>([])
+  const [judgement, setJudgement] = useState('')
+  const [labelQty, setLabelQty] = useState('없음')
+  const [manufacturerSupplier, setManufacturerSupplier] = useState('')
+  const [containerQty, setContainerQty] = useState('')
+  const [totalQty, setTotalQty] = useState('')
+  const [remarks, setRemarks] = useState('')
 
   const today = new Date().toISOString().split('T')[0]
 
   const [productName, setProductName] = useState('O0330')
-  const [lotNo, setLotNo] = useState('')
-  const [sampleType, setSampleType] = useState('액체원료')
-  const [manufacturerSupplier, setManufacturerSupplier] = useState('')
   const [manufactureDate, setManufactureDate] = useState(today)
-  const [containerQty, setContainerQty] = useState('')
-  const [totalQty, setTotalQty] = useState('')
   const [requestDate, setRequestDate] = useState(today)
   const [department, setDepartment] = useState('음성공장 합성팀')
-  const [remarks, setRemarks] = useState('')
+  const [judgementDate, setJudgementDate] = useState(today)
 
-  // ✅ 데이터 불러오기
+  // ✅ 로그인 + 데이터 로드
   useEffect(() => {
-    loadData()
+    const login = async () => {
+      try {
+        await pb.admins.authWithPassword(
+          'admin@admin.com',
+          'admin1234'
+        )
+        loadData()
+      } catch (err) {
+        console.error('로그인 실패:', err)
+      }
+    }
+
+    login()
   }, [])
 
+  // ✅ 데이터 불러오기
   const loadData = async () => {
-    const data = await pb.collection('test_requests').getFullList({
-      sort: '-created',
-    })
-    setRequestList(data)
+    try {
+      const data = await pb
+        .collection('test_requests')
+        .getFullList({
+          sort: '-created',
+        })
+
+      setRequestList(data)
+    } catch (err) {
+      console.error('데이터 불러오기 실패:', err)
+    }
   }
 
-  // ✅ 의뢰번호 생성 (기존 그대로)
+  // ✅ 의뢰번호 생성
   const generateRequestNo = (sampleType: string) => {
     const today = new Date()
     const year = String(today.getFullYear()).slice(-2)
@@ -42,14 +67,14 @@ export default function Home() {
     const day = String(today.getDate()).padStart(2, '0')
     const datePart = `${year}${month}${day}`
 
-    const prefixMap: any = {
+    let prefixMap: { [key: string]: string } = {
       액체원료: 'ER',
       고체원료: 'ER',
       제품: 'EP',
       중간체: 'EB',
     }
 
-    const prefix = prefixMap[sampleType] || 'ER'
+    let prefix = prefixMap[sampleType] || 'ER'
 
     const sameDayCount = requestList.filter((item) =>
       item.requestNo?.startsWith(prefix + datePart)
@@ -60,42 +85,50 @@ export default function Home() {
     return `${prefix}${datePart}${serial}`
   }
 
-  // ✅ 저장
+  // ✅ 저장 (핵심 수정 완료)
   const saveData = async () => {
-    const autoRequestNo = generateRequestNo(sampleType)
-    const autoReportNo = `Q${autoRequestNo}`
+    try {
+      const autoRequestNo = generateRequestNo(sampleType)
+      const autoReportNo = `Q${autoRequestNo}`
 
-    await pb.collection('test_requests').create({
-      productName,
-      lotNo,
-      sampleType,
-      manufacturerSupplier,
-      manufactureDate,
-      containerQty,
-      totalQty,
-      requestDate,
-      department,
-      remarks,
-      judgementDate: today,
-      judgement: '',
-      labelQty: '없음',
-      requestNo: autoRequestNo,
-      reportNo: autoReportNo,
-    })
+      await pb.collection('test_requests').create({
+        requester,
+        productName,
+        lotNo,
+        sampleType,
+        manufacturerSupplier,
+        manufactureDate,
+        containerQty,
+        totalQty,
+        requestDate,
+        department,
+        remarks,
+        judgementDate,
+        judgement,
+        labelQty,
+        requestNo: autoRequestNo,
+        reportNo: autoReportNo,
+      })
 
-    alert(`저장 완료\n의뢰번호: ${autoRequestNo}`)
-    loadData()
+      alert(`저장 완료\n의뢰번호: ${autoRequestNo}`)
+
+      loadData()
+    } catch (err) {
+      console.error('저장 실패:', err)
+      alert('저장 실패 (DB 확인 필요)')
+    }
   }
 
-  // ✅ 삭제 (id 기준)
+  // ✅ 삭제
   const deleteItem = async (id: string) => {
-    if (!confirm('선택한 의뢰를 삭제하시겠습니까?')) return
+    if (!confirm('삭제하시겠습니까?')) return
+
     await pb.collection('test_requests').delete(id)
     loadData()
   }
 
-  // ✅ 수정 공통 함수
-  const updateField = async (id: string, field: string, value: any) => {
+  // ✅ 결과 업데이트
+  const updateResult = async (id: string, field: string, value: string) => {
     await pb.collection('test_requests').update(id, {
       [field]: value,
     })
@@ -148,7 +181,7 @@ export default function Home() {
           <input className="border p-2 w-full" placeholder="제조자 / 납품자" value={manufacturerSupplier} onChange={(e) => setManufacturerSupplier(e.target.value)} />
           <input type="date" className="border p-2 w-full" value={manufactureDate} onChange={(e) => setManufactureDate(e.target.value)} />
           <input className="border p-2 w-full" placeholder="용기 수량" value={containerQty} onChange={(e) => setContainerQty(e.target.value)} />
-          <input className="border p-2 w-full" placeholder="입고 수량" value={totalQty} onChange={(e) => setTotalQty(e.target.value)} />
+          <input className="border p-2 w-full" placeholder="제조 / 입고 수량" value={totalQty} onChange={(e) => setTotalQty(e.target.value)} />
           <input type="date" className="border p-2 w-full" value={requestDate} onChange={(e) => setRequestDate(e.target.value)} />
 
           <select className="border p-2 w-full" value={department} onChange={(e) => setDepartment(e.target.value)}>
@@ -173,26 +206,26 @@ export default function Home() {
       {/* ================= 접수대장 ================= */}
       {activeTab === 'ledger' && (
         <table className="w-full border text-sm">
+          <thead>
+            <tr>
+              <th>No.</th>
+              <th>시험항목</th>
+              <th>의뢰번호</th>
+              <th>성적번호</th>
+              <th>품명</th>
+              <th>삭제</th>
+            </tr>
+          </thead>
           <tbody>
             {requestList.map((item, index) => (
               <tr key={item.id}>
                 <td>{index + 1}</td>
                 <td>{item.sampleType}</td>
-                <td>{item.requestDate}</td>
                 <td>{item.requestNo}</td>
                 <td>{item.reportNo}</td>
                 <td>{item.productName}</td>
-                <td>{item.lotNo}</td>
-                <td>{item.manufacturerSupplier}</td>
-                <td>{item.manufactureDate}</td>
-                <td>{item.containerQty}</td>
-                <td>{item.totalQty}</td>
-                <td>{item.department}</td>
-                <td>{item.remarks}</td>
                 <td>
-                  <button onClick={() => deleteItem(item.id)} className="border px-2 py-1">
-                    삭제
-                  </button>
+                  <button onClick={() => deleteItem(item.id)}>삭제</button>
                 </td>
               </tr>
             ))}
@@ -207,53 +240,19 @@ export default function Home() {
             {requestList.map((item, index) => (
               <tr key={item.id}>
                 <td>{index + 1}</td>
-                <td>{item.sampleType}</td>
                 <td>{item.reportNo}</td>
                 <td>{item.productName}</td>
-
                 <td>
                   <select
                     value={item.judgement || ''}
                     onChange={(e) =>
-                      updateField(item.id, 'judgement', e.target.value)
+                      updateResult(item.id, 'judgement', e.target.value)
                     }
                   >
                     <option value="">선택</option>
                     <option value="적합">적합</option>
                     <option value="부적합">부적합</option>
                   </select>
-                </td>
-
-                <td>
-                  <input
-                    type="date"
-                    value={item.judgementDate || today}
-                    onChange={(e) =>
-                      updateField(item.id, 'judgementDate', e.target.value)
-                    }
-                  />
-                </td>
-
-                <td>
-                  <select
-                    value={item.labelQty || '없음'}
-                    onChange={(e) =>
-                      updateField(item.id, 'labelQty', e.target.value)
-                    }
-                  >
-                    <option value="없음">없음</option>
-                    {Array.from({ length: 500 }, (_, i) => (
-                      <option key={i} value={String(i + 1)}>
-                        {i + 1}매
-                      </option>
-                    ))}
-                  </select>
-                </td>
-
-                <td>
-                  <button onClick={() => deleteItem(item.id)} className="border px-2 py-1">
-                    삭제
-                  </button>
                 </td>
               </tr>
             ))}
