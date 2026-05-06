@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import PocketBase from 'pocketbase'
 
-const pb = new PocketBase('http://125.251.141.230:8090')
+const pb = new PocketBase('http://127.0.0.1:8090')
 
 type RequestItem = {
   id: string
@@ -42,7 +42,19 @@ export default function Home() {
   const [remarks, setRemarks] = useState('')
 
   useEffect(() => {
-    loadData()
+    const login = async () => {
+    try {
+      await pb.admins.authWithPassword(
+        'admin@admin.com',
+        'admin1234'
+      )
+      loadData()
+    } catch (err) {
+      console.error(err)
+    }
+  }
+
+  login()
   }, [])
 
   const loadData = async () => {
