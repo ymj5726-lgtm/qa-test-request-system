@@ -54,7 +54,7 @@ export default function Home() {
     }
   }
 
-  login()
+  init()
   }, [])
 
   const loadData = async () => {
