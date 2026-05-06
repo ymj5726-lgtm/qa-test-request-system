@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import PocketBase from 'pocketbase'
 
-const pb = new PocketBase('http://127.0.0.1:8090')
+const pb = new PocketBase('http://192.168.70.27:8090')
 
 type RequestItem = {
   id: string
