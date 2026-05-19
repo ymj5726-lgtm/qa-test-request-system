@@ -62,8 +62,6 @@ export default function Home() {
     try {
       const supabaseJS = (window as any).supabase
       if (supabaseJS) {
-        // 💡 에러의 원인이 되었던 불필요한 비교 구문을 모두 지우고, 
-        // 라이브러리가 존재하면 즉시 Supabase 클라이언트를 초기화하도록 단순화했습니다.
         supabase = supabaseJS.createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
         setIsDbReady(true)
         fetchData()
@@ -156,16 +154,19 @@ export default function Home() {
     }
 
     try {
-      const { data, error } = await supabase
+      // 💡 .select() 체이닝 함수를 제외하고 순수하게 Insert만 수행하여 호환성을 확보합니다.
+      const { error } = await supabase
         .from('requests')
         .insert([newItem])
-        .select()
 
       if (error) throw error
 
-      setRequestList([...requestList, ...(data || [])])
+      // 데이터 저장 후 안전하게 원격 서버의 데이터를 다시 가져와 화면을 동기화합니다.
+      await fetchData()
+      
       alert(`저장 완료\n의뢰번호: ${autoRequestNo}`)
       
+      // 저장 성공 시 입력 폼 초기화
       setRequester('')
       setLotNo('')
       setManufacturerSupplier('')
@@ -175,9 +176,11 @@ export default function Home() {
     } catch (error: any) {
       console.error('저장 에러:', error)
       alert(
-        '데이터 저장에 실패했습니다.\n\n' +
-        '1. 37번째 줄에 실제 anon key가 제대로 들어갔는지 확인해 주세요.\n' +
-        '2. Supabase SQL Editor에서 requests 테이블 생성 쿼리를 잘 실행했는지 확인해 주세요.'
+        `데이터 저장에 실패했습니다.\n\n` +
+        `이유(Error): ${error.message || '연결 실패'}\n` +
+        `상세 내용(Details): ${error.details || '없음'}\n\n` +
+        `1. 테이블이 정상 실행되었는지 확인해 주세요.\n` +
+        `2. RLS(보안정책) 해제 구문이 실행되었는지 확인해 주세요.`
       )
     }
   }
@@ -206,11 +209,10 @@ export default function Home() {
   const updateResult = async (id: any, field: string, value: string) => {
     if (!supabase) return
     try {
-      const { data, error } = await supabase
+      const { error } = await supabase
         .from('requests')
         .update({ [field]: value })
         .eq('id', id)
-        .select()
 
       if (error) throw error
 
