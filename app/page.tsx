@@ -63,7 +63,7 @@ export default function Home() {
       const supabaseJS = (window as any).supabase
       // 💡 타입 에러를 예방하기 위해 불필요한 고정 문자열 비교를 생략하고
       // 키 설정 여부만 안전하게 체크합니다.
-      if (supabaseJS && SUPABASE_ANON_KEY && SUPABASE_ANON_KEY !== '내_비밀키_값_적는_곳') {
+      if (supabaseJS && SUPABASE_ANON_KEY && SUPABASE_ANON_KEY !== 'sb_publishable_NkNCMpef_PKL2Ho8TQDtNA_6NQzmupW') {
         supabase = supabaseJS.createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
         setIsDbReady(true)
         fetchData()
