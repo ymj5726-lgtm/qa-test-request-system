@@ -98,11 +98,12 @@ export default function Home() {
     }
   }
 
-  // ⭐ [수정 핵심] 사용자가 입력한 의뢰일(targetDate)을 기준으로 번호를 생성하는 로직
-  const generateRequestNo = (currentSampleType: string, targetDate: string) => {
+  // ⭐ [수정 완료] 사용자가 입력한 의뢰일(targetDate)을 기준으로 번호를 생성하는 로직
+  // 일련번호 자릿수를 기존 3자리(001)에서 2자리(01)로 최적화했습니다.
+  const generateRequestNo = (currentSampleType: string, targetDate: string, currentList: any[]) => {
     if (!targetDate) return ''
 
-    // 1. 날짜에서 하이픈(-) 등을 제거하고 숫자만 추출 후 YYMMDD 포맷팅 (예: "2026-04-30" -> "260430")
+    // 1. 날짜에서 하이픈(-) 등을 제거하고 숫자만 추출 후 YYMMDD 포맷팅 (예: "2026-05-19" -> "260519")
     const cleanDate = targetDate.replace(/[^0-9]/g, '')
     const datePart = cleanDate.substring(2, 8) 
 
@@ -114,16 +115,17 @@ export default function Home() {
       중간체: 'EB',
     }
     let prefix = prefixMap[currentSampleType] || 'ER'
-    const fullPattern = prefix + datePart // 예: "ER260430"
+    const fullPattern = prefix + datePart // 예: "ER260519"
 
-    // 3. 전체 리스트에서 '선택한 접두사 + 선택한 의뢰일'로 이미 생성된 데이터 건수 카운트
-    const list = Array.isArray(requestList) ? requestList : []
+    // 3. 동기화된 리스트에서 '선택한 접두사 + 해당 날짜'로 이미 생성된 데이터 건수만 정밀 필터링
+    const list = Array.isArray(currentList) ? currentList : []
     const sameDayCount = list.filter((item) =>
       item && item.requestNo && item.requestNo.startsWith(fullPattern)
     ).length
 
-    // 4. 일련번호 3자리 포맷팅 (001, 002...)
-    const serial = String(sameDayCount + 1).padStart(3, '0')
+    // 4. 일련번호 2자리 포맷팅 (01, 02...)
+    // padStart(2, '0')를 사용해 100개 미만일 땐 2자리 유지, 100번째(100)부터는 자연스럽게 세 자리가 됩니다.
+    const serial = String(sameDayCount + 1).padStart(2, '0')
 
     return `${fullPattern}${serial}`
   }
@@ -134,40 +136,55 @@ export default function Home() {
       return
     }
 
-    // ⭐ [수정 핵심] 의뢰일(requestDate) 상태를 함수 매개변수로 함께 넘겨줍니다.
-    const autoRequestNo = generateRequestNo(sampleType, requestDate)
-    const autoReportNo = `Q${autoRequestNo}`
-
-    const newItem = {
-      requester: requester || '',
-      productName: productName || 'O0330',
-      lotNo: lotNo || '',
-      sampleType: sampleType || '액체원료',
-      manufacturerSupplier: manufacturerSupplier || '',
-      manufactureDate: manufactureDate || today,
-      containerQty: containerQty || '',
-      totalQty: totalQty || '',
-      requestDate: requestDate || today,
-      department: department || '음성공장 합성팀',
-      remarks: remarks || '',
-      judgementDate: judgementDate || today,
-      judgement: judgement || '',
-      labelQty: labelQty || '없음',
-      requestNo: autoRequestNo,
-      reportNo: autoReportNo,
-    }
-
     try {
-      const { error } = await supabase
+      // 15명의 직원이 동시 사용할 때 일련번호의 혼선을 최소화하기 위해,
+      // 저장 직전에 Supabase 서버로부터 최신 테이블 목록 데이터를 강제 동기화합니다.
+      const { data: latestData, error: fetchError } = await supabase
+        .from('requests')
+        .select('*')
+        .order('created_at', { ascending: true })
+
+      if (fetchError) throw fetchError
+      
+      const currentList = latestData || []
+      setRequestList(currentList)
+
+      // 최신화된 리스트와 사용자가 화면에 작성한 의뢰일(requestDate)을 넘겨 최종 고유 번호를 도출합니다.
+      const autoRequestNo = generateRequestNo(sampleType, requestDate, currentList)
+      const autoReportNo = `Q${autoRequestNo}`
+
+      const newItem = {
+        requester: requester || '',
+        productName: productName || 'O0330',
+        lotNo: lotNo || '',
+        sampleType: sampleType || '액체원료',
+        manufacturerSupplier: manufacturerSupplier || '',
+        manufactureDate: manufactureDate || today,
+        containerQty: containerQty || '',
+        totalQty: totalQty || '',
+        requestDate: requestDate || today,
+        department: department || '음성공장 합성팀',
+        remarks: remarks || '',
+        judgementDate: judgementDate || today,
+        judgement: judgement || '',
+        labelQty: labelQty || '없음',
+        requestNo: autoRequestNo,
+        reportNo: autoReportNo,
+      }
+
+      // Supabase 테이블에 데이터 삽입
+      const { error: insertError } = await supabase
         .from('requests')
         .insert([newItem])
 
-      if (error) throw error
+      if (insertError) throw insertError
 
+      // 성공 후 전체 리스트 리로드 및 화면 갱신
       await fetchData()
       
       alert(`저장 완료\n의뢰번호: ${autoRequestNo}\n성적번호: ${autoReportNo}`)
       
+      // 입력 폼 초기화
       setRequester('')
       setLotNo('')
       setManufacturerSupplier('')
