@@ -337,7 +337,7 @@ const downloadExcel = () => {
   const headers = ["No", "시험항목", "의뢰자", "의뢰일", "의뢰번호", "성적번호", "품명", "제조번호", "제조자/납품자", "채취량", "제조/입고 일자", "용기수량", "입고수량", "의뢰부서", "비고"];
   
 // 데이터 내 쉼표나 따옴표가 있을 경우 안전하게 처리하는 함수
-const formatCell = (cell) => {
+  const formatCell = (cell: any) => {
     let value = String(cell || "");
     const quote = String.fromCharCode(34); // 큰따옴표(")를 안전하게 정의
     
