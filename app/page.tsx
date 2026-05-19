@@ -31,7 +31,7 @@ export default function Home() {
   // ⚠️ 중요: 발급받으신 Supabase URL과 복사하신 Anon Key를 입력해 주세요!
   const SUPABASE_URL = 'https://ksuyhgnpiqnytafmabai.supabase.co'
   // 💡 아래 따옴표 안에 아까 찾으신 아주 긴 anon key(공개 API 키) 값을 붙여넣기 해주세요!
-  const SUPABASE_ANON_KEY = 'sb_publishable_NkNCMpef_PKL2Ho8TQDtNA_6NQzmupW'
+  const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtzdXloZ25waXFueXRhZm1hYmFpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkxMTMyOTksImV4cCI6MjA5NDY4OTI5OX0.keZTkm7kWzq6ftrDo3xNZEImnWZnUT8CXYl2vDzkg_M'
 
   useEffect(() => {
     const loadSupabase = async () => {
