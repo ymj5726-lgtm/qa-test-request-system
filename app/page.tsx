@@ -30,7 +30,7 @@ export default function Home() {
 
   // ⚠️ 중요: 발급받으신 Supabase URL과 복사하신 Anon Key를 입력해 주세요!
   const SUPABASE_URL = 'https://ksuyhgnpiqnytafmabai.supabase.co'
-  // 💡 아래 따옴표 안에 아까 찾으신 아주 긴 anon key(공개 API 키) 값을 붙여넣기 해보세요.
+  // 💡 아래 따옴표 안에 아까 찾으신 아주 긴 anon key(공개 API 키) 값을 붙여넣기 해주세요!
   const SUPABASE_ANON_KEY = 'sb_publishable_NkNCMpef_PKL2Ho8TQDtNA_6NQzmupW'
 
   useEffect(() => {
@@ -49,7 +49,7 @@ export default function Home() {
         }
         script.onerror = () => {
           console.error('Supabase 라이브러리 로드 실패')
-          setDbError('데이터베이스 라이브러리를 불러오지 못했습니다.')
+          setDbError('데이터베이스 라이브러리를 불러오지 못했습니다. 네트워크 연결을 확인해 주세요.')
         }
         document.body.appendChild(script)
       }
@@ -61,15 +61,15 @@ export default function Home() {
   const initSupabase = () => {
     try {
       const supabaseJS = (window as any).supabase
-      // 💡 타입 에러를 예방하기 위해 불필요한 고정 문자열 비교를 생략하고
-      // 키 설정 여부만 안전하게 체크합니다.
-      if (supabaseJS && SUPABASE_ANON_KEY && SUPABASE_ANON_KEY !== 'sb_publishable_NkNCMpef_PKL2Ho8TQDtNA_6NQzmupW') {
+      if (supabaseJS) {
+        // 💡 에러의 원인이 되었던 불필요한 비교 구문을 모두 지우고, 
+        // 라이브러리가 존재하면 즉시 Supabase 클라이언트를 초기화하도록 단순화했습니다.
         supabase = supabaseJS.createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
         setIsDbReady(true)
         fetchData()
       } else {
         setIsDbReady(true)
-        setDbError('Supabase API 설정(URL, Key)이 완료되지 않았습니다. 코드를 수정해 주세요.')
+        setDbError('Supabase 라이브러리가 로드되었으나 초기화할 수 없습니다.')
       }
     } catch (error) {
       console.error('Supabase 초기화 에러:', error)
@@ -92,9 +92,11 @@ export default function Home() {
     } catch (error: any) {
       console.error('데이터 조회 실패:', error)
       setDbError(
-        '데이터를 불러오지 못했습니다.\n' +
-        '1. Supabase 테이블이 생성되었는지 확인해 주세요.\n' +
-        '2. RLS(Row Level Security) 설정이 비활성화 되어 있거나 정책이 구성되었는지 확인해 주세요.'
+        '데이터를 불러오지 못했습니다.\n\n' +
+        '체크리스트:\n' +
+        '1. 37번째 줄 코드에 실제 수파베이스 [anon] key값을 정확히 넣었는지 확인해 주세요.\n' +
+        '2. Supabase 대시보드에 [requests] 테이블이 철자 그대로 생성되었는지 확인해 주세요.\n' +
+        '3. [requests] 테이블의 Row Level Security(RLS)가 꺼져(disabled) 있는지 확인해 주세요.'
       )
     }
   }
@@ -172,7 +174,11 @@ export default function Home() {
       setRemarks('')
     } catch (error: any) {
       console.error('저장 에러:', error)
-      alert('데이터 저장에 실패했습니다. Supabase 테이블 및 RLS 설정을 확인해 주세요.')
+      alert(
+        '데이터 저장에 실패했습니다.\n\n' +
+        '1. 37번째 줄에 실제 anon key가 제대로 들어갔는지 확인해 주세요.\n' +
+        '2. Supabase SQL Editor에서 requests 테이블 생성 쿼리를 잘 실행했는지 확인해 주세요.'
+      )
     }
   }
 
@@ -230,7 +236,7 @@ export default function Home() {
 
       {dbError && (
         <div className="bg-red-50 text-red-800 p-4 rounded mb-6 text-sm border border-red-200 space-y-2">
-          <p className="font-bold">⚠️ 데이터베이스 설정이 필요합니다</p>
+          <p className="font-bold">⚠️ 데이터베이스 설정 안내</p>
           <pre className="whitespace-pre-wrap leading-relaxed text-xs bg-white p-3 rounded border border-red-100">{dbError}</pre>
           <div className="pt-2">
             <button 
