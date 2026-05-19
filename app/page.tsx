@@ -336,10 +336,28 @@ const downloadExcel = () => {
   const filteredData = getFilteredRequests();
   const headers = ["No", "시험항목", "의뢰자", "의뢰일", "의뢰번호", "성적번호", "품명", "제조번호", "제조자/납품자", "채취량", "제조/입고 일자", "용기수량", "입고수량", "의뢰부서", "비고"];
   
+  // 데이터 내 쉼표가 있을 경우 따옴표로 감싸는 함수
+  const formatCell = (cell) => {
+    const value = String(cell || "");
+    return value.includes(",") ? `"${value}"` : value;
+  };
+  
   const csvRows = filteredData.map((item, index) => [
-    index + 1, item.sampleType, item.requester, item.requestDate, item.requestNo, item.reportNo,
-    item.productName, item.lotNo, item.manufacturerSupplier, item.sampleQty,
-    item.manufactureDate, item.containerQty, item.totalQty, item.department, item.remarks
+    index + 1, 
+    formatCell(item.sampleType), 
+    formatCell(item.requester), 
+    formatCell(item.requestDate), 
+    formatCell(item.requestNo), 
+    formatCell(item.reportNo),
+    formatCell(item.productName), 
+    formatCell(item.lotNo), 
+    formatCell(item.manufacturerSupplier), 
+    formatCell(item.sampleQty),
+    formatCell(item.manufactureDate), 
+    formatCell(item.containerQty), 
+    formatCell(item.totalQty), 
+    formatCell(item.department), 
+    formatCell(item.remarks)
   ].join(',')).join('\n');
 
   const csvContent = "\uFEFF" + headers.join(',') + "\n" + csvRows;
