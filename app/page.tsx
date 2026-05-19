@@ -331,6 +331,28 @@ export default function Home() {
     })
   }
 
+// 엑셀 다운로드 함수
+const downloadExcel = () => {
+  const filteredData = getFilteredRequests();
+  const headers = ["No", "시험항목", "의뢰자", "의뢰일", "의뢰번호", "성적번호", "품명", "제조번호", "제조자/납품자", "채취량", "제조/입고 일자", "용기수량", "입고수량", "의뢰부서", "비고"];
+  
+  const csvRows = filteredData.map((item, index) => [
+    index + 1, item.sampleType, item.requester, item.requestDate, item.requestNo, item.reportNo,
+    item.productName, item.lotNo, item.manufacturerSupplier, item.sampleQty,
+    item.manufactureDate, item.containerQty, item.totalQty, item.department, item.remarks
+  ].join(',')).join('\n');
+
+  const csvContent = "\uFEFF" + headers.join(',') + "\n" + csvRows;
+  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.setAttribute('download', '접수대장.csv');
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+};
+  
   return (
     <div className="p-10 max-w-6xl mx-auto">
       <h1 className="text-3xl font-bold mb-8">시험 의뢰 관리 시스템 (Supabase)</h1>
@@ -635,6 +657,12 @@ export default function Home() {
               <option value="제품">제품</option>
               <option value="중간체">중간체</option>
             </select>
+            <button 
+  onClick={downloadExcel} 
+  className="bg-green-600 text-white px-4 py-2 rounded font-bold hover:bg-green-700 ml-2"
+>
+  Excel 다운로드
+</button>
           </div>
 
           <table className="w-full border text-sm text-center whitespace-nowrap">
