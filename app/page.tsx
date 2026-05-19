@@ -15,7 +15,7 @@ const manufacturerList = [
 ]
 
 // 🧪 요청하신 채취량 프리셋 목록
-const sampleQtyList = ['2g', '3g', '4g']
+const sampleQtyList = ['2g', '3g', '4g', '100mL']
 
 export default function Home() {
   const [activeTab, setActiveTab] = useState('request')
