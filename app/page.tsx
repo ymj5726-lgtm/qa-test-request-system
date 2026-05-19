@@ -5,7 +5,7 @@ import { useEffect, useState } from 'react'
 // Supabase 클라이언트 라이브러리를 위한 전역 변수
 let supabase: any = null
 
-// 🏢 요청하신 음성공장 거래 제조처/납품처 프리셋 목록으로 교체했습니다.
+// 🏢 요청하신 음성공장 거래 제조처/납품처 프리셋 목록
 const manufacturerList = [
   '(주)파마코스텍',
   'SDC',
@@ -13,6 +13,9 @@ const manufacturerList = [
   'SKMJ',
   '동진쎄미켐'
 ]
+
+// 🧪 요청하신 채취량 프리셋 목록
+const sampleQtyList = ['2g', '3g', '4g']
 
 export default function Home() {
   const [activeTab, setActiveTab] = useState('request')
@@ -37,6 +40,10 @@ export default function Home() {
   const [judgementDate, setJudgementDate] = useState(today)
   const [isDbReady, setIsDbReady] = useState(false)
   const [dbError, setDbError] = useState<string | null>(null)
+
+  // 🧪 [채취량 및 수기 작성 상태 추가]
+  const [sampleQty, setSampleQty] = useState('2g') // 기본값 2g
+  const [isCustomSampleQty, setIsCustomSampleQty] = useState(false)
 
   // 🔎 [검색 전용 상태] 접수대장과 결과통보의 독립된 검색 제어 (기본값 공란 및 전체구분)
   const [searchProduct, setSearchProduct] = useState('')
@@ -191,6 +198,7 @@ export default function Home() {
         labelQty: labelQty || '없음',
         requestNo: autoRequestNo,
         reportNo: autoReportNo,
+        sampleQty: sampleQty || '', // ⭐ Supabase 새 필드 전송
       }
 
       const { error: insertError } = await supabase
@@ -213,6 +221,8 @@ export default function Home() {
       setContainerQty('')
       setTotalQty('')
       setRemarks('')
+      setSampleQty('2g')                 // 채취량 기본값 리셋
+      setIsCustomSampleQty(false)        // 채취량 수기 모드 리셋
     } catch (error: any) {
       console.error('저장 에러:', error)
       alert(
@@ -296,6 +306,7 @@ export default function Home() {
           requestDate: editFields.requestDate,
           department: editFields.department,
           remarks: editFields.remarks,
+          sampleQty: editFields.sampleQty, // ⭐ 편집 수정 저장 필드 추가
         })
         .eq('id', id)
 
@@ -471,6 +482,49 @@ export default function Home() {
             )}
           </div>
 
+          {/* 🧪 [채취량 드롭다운 및 직접 수기 작성 병행 처리 추가] */}
+          <div>
+            <label className="block mb-1 font-semibold text-sm text-gray-700">채취량</label>
+            {!isCustomSampleQty ? (
+              <select
+                className="border p-2 w-full rounded bg-white"
+                value={sampleQty}
+                onChange={(e) => {
+                  if (e.target.value === 'custom_qty_write') {
+                    setIsCustomSampleQty(true)
+                    setSampleQty('') // 빈 값으로 비우고 수기 입력 대기
+                  } else {
+                    setSampleQty(e.target.value)
+                  }
+                }}
+              >
+                {sampleQtyList.map((qty) => (
+                  <option key={qty} value={qty}>{qty}</option>
+                ))}
+                <option value="custom_qty_write">🖋️ 직접 입력 (수기 작성)</option>
+              </select>
+            ) : (
+              <div className="flex gap-2">
+                <input
+                  className="border p-2 w-full rounded"
+                  placeholder="예: 5g, 10g 등 직접 입력"
+                  value={sampleQty}
+                  onChange={(e) => setSampleQty(e.target.value)}
+                />
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsCustomSampleQty(false)
+                    setSampleQty('2g') // 기본값 복원
+                  }}
+                  className="border px-4 py-2 bg-gray-100 rounded text-sm hover:bg-gray-200 font-semibold whitespace-nowrap"
+                >
+                  목록에서 선택
+                </button>
+              </div>
+            )}
+          </div>
+
           <div>
             <label className="block mb-1 font-semibold text-sm text-gray-700">제조 / 입고 일자</label>
             <input
@@ -595,6 +649,7 @@ export default function Home() {
                 <th className="border p-2">품명</th>
                 <th className="border p-2">제조번호</th>
                 <th className="border p-2">제조자/납품자</th>
+                <th className="border p-2">채취량</th> {/* ⭐ 접수대장에 채취량 컬럼 헤더 추가 */}
                 <th className="border p-2">제조/입고 일자</th>
                 <th className="border p-2">용기수량</th>
                 <th className="border p-2">입고수량</th>
@@ -731,6 +786,20 @@ export default function Home() {
                           )}
                         </td>
 
+                        {/* ⭐ 채취량 컬럼 셀 렌더링 및 인라인 편집 구현 */}
+                        <td className="border p-2 text-xs font-semibold">
+                          {isEditing ? (
+                            <input
+                              type="text"
+                              className="border p-1 rounded text-xs w-16"
+                              value={editFields.sampleQty || ''}
+                              onChange={(e) => handleEditChange('sampleQty', e.target.value)}
+                            />
+                          ) : (
+                            item.sampleQty || '-'
+                          )}
+                        </td>
+
                         {/* 7. 제조/입고 일자 */}
                         <td className="border p-2">
                           {isEditing ? (
@@ -845,7 +914,7 @@ export default function Home() {
                   })
                 ) : (
                   <tr>
-                    <td colSpan={15} className="border p-8 text-gray-500">
+                    <td colSpan={16} className="border p-8 text-gray-500">
                       데이터가 존재하지 않습니다.
                     </td>
                   </tr>
