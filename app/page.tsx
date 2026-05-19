@@ -79,7 +79,6 @@ export default function Home() {
     if (!supabase) return
     setDbError(null)
     try {
-      // requests 테이블에서 데이터 가져오기
       const { data, error } = await supabase
         .from('requests')
         .select('*')
@@ -99,30 +98,34 @@ export default function Home() {
     }
   }
 
-  const generateRequestNo = (sampleType: string) => {
-    const today = new Date()
-    const year = String(today.getFullYear()).slice(-2)
-    const month = String(today.getMonth() + 1).padStart(2, '0')
-    const day = String(today.getDate()).padStart(2, '0')
-    const datePart = `${year}${month}${day}`
+  // ⭐ [수정 핵심] 사용자가 입력한 의뢰일(targetDate)을 기준으로 번호를 생성하는 로직
+  const generateRequestNo = (currentSampleType: string, targetDate: string) => {
+    if (!targetDate) return ''
 
+    // 1. 날짜에서 하이픈(-) 등을 제거하고 숫자만 추출 후 YYMMDD 포맷팅 (예: "2026-04-30" -> "260430")
+    const cleanDate = targetDate.replace(/[^0-9]/g, '')
+    const datePart = cleanDate.substring(2, 8) 
+
+    // 2. 샘플 유형별 접두사 매핑
     let prefixMap: { [key: string]: string } = {
       액체원료: 'ER',
       고체원료: 'ER',
       제품: 'EP',
       중간체: 'EB',
     }
+    let prefix = prefixMap[currentSampleType] || 'ER'
+    const fullPattern = prefix + datePart // 예: "ER260430"
 
-    let prefix = prefixMap[sampleType] || 'ER'
-
+    // 3. 전체 리스트에서 '선택한 접두사 + 선택한 의뢰일'로 이미 생성된 데이터 건수 카운트
     const list = Array.isArray(requestList) ? requestList : []
     const sameDayCount = list.filter((item) =>
-      item && item.requestNo && item.requestNo.startsWith(prefix + datePart)
+      item && item.requestNo && item.requestNo.startsWith(fullPattern)
     ).length
 
-    const serial = String(sameDayCount + 1).padStart(2, '0')
+    // 4. 일련번호 3자리 포맷팅 (001, 002...)
+    const serial = String(sameDayCount + 1).padStart(3, '0')
 
-    return `${prefix}${datePart}${serial}`
+    return `${fullPattern}${serial}`
   }
 
   const saveData = async () => {
@@ -131,7 +134,8 @@ export default function Home() {
       return
     }
 
-    const autoRequestNo = generateRequestNo(sampleType)
+    // ⭐ [수정 핵심] 의뢰일(requestDate) 상태를 함수 매개변수로 함께 넘겨줍니다.
+    const autoRequestNo = generateRequestNo(sampleType, requestDate)
     const autoReportNo = `Q${autoRequestNo}`
 
     const newItem = {
@@ -154,19 +158,16 @@ export default function Home() {
     }
 
     try {
-      // 💡 .select() 체이닝 함수를 제외하고 순수하게 Insert만 수행하여 호환성을 확보합니다.
       const { error } = await supabase
         .from('requests')
         .insert([newItem])
 
       if (error) throw error
 
-      // 데이터 저장 후 안전하게 원격 서버의 데이터를 다시 가져와 화면을 동기화합니다.
       await fetchData()
       
-      alert(`저장 완료\n의뢰번호: ${autoRequestNo}`)
+      alert(`저장 완료\n의뢰번호: ${autoRequestNo}\n성적번호: ${autoReportNo}`)
       
-      // 저장 성공 시 입력 폼 초기화
       setRequester('')
       setLotNo('')
       setManufacturerSupplier('')
@@ -178,9 +179,7 @@ export default function Home() {
       alert(
         `데이터 저장에 실패했습니다.\n\n` +
         `이유(Error): ${error.message || '연결 실패'}\n` +
-        `상세 내용(Details): ${error.details || '없음'}\n\n` +
-        `1. 테이블이 정상 실행되었는지 확인해 주세요.\n` +
-        `2. RLS(보안정책) 해제 구문이 실행되었는지 확인해 주세요.`
+        `상세 내용(Details): ${error.details || '없음'}`
       )
     }
   }
