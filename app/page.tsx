@@ -339,15 +339,16 @@ const downloadExcel = () => {
 // 데이터 내 쉼표나 따옴표가 있을 경우 안전하게 처리하는 함수
 const formatCell = (cell) => {
     let value = String(cell || "");
+    const quote = String.fromCharCode(34); // 큰따옴표(")를 안전하게 정의
     
-    // 데이터 내에 따옴표가 있다면 두 개로 치환 (CSV 표준)
-    if (value.includes('"')) {
-      value = value.replace(/"/g, '""');
+    // 데이터 내에 큰따옴표가 있다면 두 개로 치환
+    if (value.includes(quote)) {
+      value = value.replace(new RegExp(quote, 'g'), quote + quote);
     }
     
-    // 쉼표, 따옴표, 줄바꿈이 하나라도 있으면 전체를 따옴표로 감쌈
-    if (value.includes(',') || value.includes('"') || value.includes('\n')) {
-      return `"${value}"`;
+    // 쉼표, 큰따옴표, 줄바꿈이 하나라도 있으면 전체를 큰따옴표로 감쌈
+    if (value.includes(',') || value.includes(quote) || value.includes('\n')) {
+      return quote + value + quote;
     }
     
     return value;
