@@ -28,6 +28,15 @@ export default function Home() {
   const [isDbReady, setIsDbReady] = useState(false)
   const [dbError, setDbError] = useState<string | null>(null)
 
+  // 🔎 [검색 전용 상태] 접수대장과 결과통보의 독립된 검색 제어 (기본값 공란 및 전체구분)
+  const [searchProduct, setSearchProduct] = useState('')
+  const [searchType, setSearchType] = useState('')
+
+  // 📄 [페이지네이션 전용 상태] 한 페이지에 15행씩 출력 제어
+  const [ledgerPage, setLedgerPage] = useState(1)
+  const [resultPage, setResultPage] = useState(1)
+  const itemsPerPage = 15 // 한 페이지에 노출할 최대 행 수
+
   // ⚠️ 중요: 발급받으신 Supabase URL과 복사하신 Anon Key를 입력해 주세요!
   const SUPABASE_URL = 'https://ksuyhgnpiqnytafmabai.supabase.co'
   // 💡 아래 따옴표 안에 아까 찾으신 아주 긴 anon key(공개 API 키) 값을 붙여넣기 해주세요!
@@ -98,8 +107,7 @@ export default function Home() {
     }
   }
 
-  // ⭐ [수정 완료] 사용자가 입력한 의뢰일(targetDate)을 기준으로 번호를 생성하는 로직
-  // 일련번호 자릿수를 기존 3자리(001)에서 2자리(01)로 최적화했습니다.
+  // ⭐ 사용자가 입력한 의뢰일(targetDate)을 기준으로 번호를 생성하는 로직
   const generateRequestNo = (currentSampleType: string, targetDate: string, currentList: any[]) => {
     if (!targetDate) return ''
 
@@ -115,7 +123,7 @@ export default function Home() {
       중간체: 'EB',
     }
     let prefix = prefixMap[currentSampleType] || 'ER'
-    const fullPattern = prefix + datePart // 예: "ER260519"
+    const fullPattern = prefix + datePart 
 
     // 3. 동기화된 리스트에서 '선택한 접두사 + 해당 날짜'로 이미 생성된 데이터 건수만 정밀 필터링
     const list = Array.isArray(currentList) ? currentList : []
@@ -124,7 +132,6 @@ export default function Home() {
     ).length
 
     // 4. 일련번호 2자리 포맷팅 (01, 02...)
-    // padStart(2, '0')를 사용해 100개 미만일 땐 2자리 유지, 100번째(100)부터는 자연스럽게 세 자리가 됩니다.
     const serial = String(sameDayCount + 1).padStart(2, '0')
 
     return `${fullPattern}${serial}`
@@ -137,8 +144,6 @@ export default function Home() {
     }
 
     try {
-      // 15명의 직원이 동시 사용할 때 일련번호의 혼선을 최소화하기 위해,
-      // 저장 직전에 Supabase 서버로부터 최신 테이블 목록 데이터를 강제 동기화합니다.
       const { data: latestData, error: fetchError } = await supabase
         .from('requests')
         .select('*')
@@ -149,7 +154,6 @@ export default function Home() {
       const currentList = latestData || []
       setRequestList(currentList)
 
-      // 최신화된 리스트와 사용자가 화면에 작성한 의뢰일(requestDate)을 넘겨 최종 고유 번호를 도출합니다.
       const autoRequestNo = generateRequestNo(sampleType, requestDate, currentList)
       const autoReportNo = `Q${autoRequestNo}`
 
@@ -172,25 +176,27 @@ export default function Home() {
         reportNo: autoReportNo,
       }
 
-      // Supabase 테이블에 데이터 삽입
       const { error: insertError } = await supabase
         .from('requests')
         .insert([newItem])
 
       if (insertError) throw insertError
 
-      // 성공 후 전체 리스트 리로드 및 화면 갱신
       await fetchData()
       
       alert(`저장 완료\n의뢰번호: ${autoRequestNo}\n성적번호: ${autoReportNo}`)
       
-      // 입력 폼 초기화
+      // ⭐ 저장 완료 후 폼 입력값 리셋: 품명과 시험 구분을 최초 가본 설정 상태로 강제 복구합니다.
       setRequester('')
+      setProductName('O0330')
       setLotNo('')
+      setSampleType('액체원료')
       setManufacturerSupplier('')
       setContainerQty('')
       setTotalQty('')
       setRemarks('')
+      
+      // 🔎 대장 및 통보 탭의 사용자 검색 필터는 저장과 무관하게 상시 "공란" 및 "전체구분" 상태를 변함없이 유지합니다.
     } catch (error: any) {
       console.error('저장 에러:', error)
       alert(
@@ -242,6 +248,15 @@ export default function Home() {
     }
   }
 
+  // 🔍 공용 데이터 필터링 헬퍼 함수
+  const getFilteredRequests = () => {
+    return requestList.filter((item) => {
+      const productMatch = !searchProduct || item.productName?.toLowerCase().includes(searchProduct.toLowerCase())
+      const typeMatch = !searchType || item.sampleType === searchType
+      return productMatch && typeMatch
+    })
+  }
+
   return (
     <div className="p-10 max-w-6xl mx-auto">
       <h1 className="text-3xl font-bold mb-8">시험 의뢰 관리 시스템 (Supabase)</h1>
@@ -275,13 +290,19 @@ export default function Home() {
           시험의뢰
         </button>
         <button
-          onClick={() => setActiveTab('ledger')}
+          onClick={() => {
+            setActiveTab('ledger')
+            setLedgerPage(1) // 탭 클릭 시 첫 페이지로 이동
+          }}
           className={`border px-4 py-2 ${activeTab === 'ledger' ? 'bg-gray-200 font-bold' : ''}`}
         >
           접수대장
         </button>
         <button
-          onClick={() => setActiveTab('result')}
+          onClick={() => {
+            setActiveTab('result')
+            setResultPage(1) // 탭 클릭 시 첫 페이지로 이동
+          }}
           className={`border px-4 py-2 ${activeTab === 'result' ? 'bg-gray-200 font-bold' : ''}`}
         >
           시험결과통보
@@ -442,13 +463,19 @@ export default function Home() {
               type="text"
               placeholder="품목명 검색"
               className="border p-2 rounded"
-              value={productName}
-              onChange={(e) => setProductName(e.target.value)}
+              value={searchProduct}
+              onChange={(e) => {
+                setSearchProduct(e.target.value)
+                setLedgerPage(1) // 검색 시 페이지 번호 초기화
+              }}
             />
             <select
-              className="border p-2 rounded"
-              value={sampleType}
-              onChange={(e) => setSampleType(e.target.value)}
+              className="border p-2 rounded bg-white"
+              value={searchType}
+              onChange={(e) => {
+                setSearchType(e.target.value)
+                setLedgerPage(1) // 검색 시 페이지 번호 초기화
+              }}
             >
               <option value="">전체 구분</option>
               <option value="액체원료">액체원료</option>
@@ -479,16 +506,16 @@ export default function Home() {
               </tr>
             </thead>
             <tbody>
-              {Array.isArray(requestList) && requestList.length > 0 ? (
-                requestList
-                  .filter((item) => {
-                    const productMatch = !productName || item.productName?.toLowerCase().includes(productName.toLowerCase())
-                    const typeMatch = !sampleType || item.sampleType === sampleType
-                    return productMatch && typeMatch
-                  })
-                  .map((item, index) => (
+              {(() => {
+                const filtered = getFilteredRequests()
+                const startIndex = (ledgerPage - 1) * itemsPerPage
+                const paginated = filtered.slice(startIndex, startIndex + itemsPerPage)
+
+                return paginated.length > 0 ? (
+                  paginated.map((item, index) => (
                     <tr key={item.id || index} className="hover:bg-gray-50">
-                      <td className="border p-2">{index + 1}</td>
+                      {/* 고유 No 컬럼 표시 */}
+                      <td className="border p-2">{startIndex + index + 1}</td>
                       <td className="border p-2">{item.sampleType}</td>
                       <td className="border p-2">{item.requester || '-'}</td>
                       <td className="border p-2">{item.requestDate}</td>
@@ -504,7 +531,7 @@ export default function Home() {
                       <td className="border p-2">{item.remarks}</td>
                       <td className="border p-2">
                         <button
-                          onClick={() => deleteItem(item.id, index)}
+                          onClick={() => deleteItem(item.id, startIndex + index)}
                           className="border bg-red-50 text-red-600 px-2 py-1 rounded hover:bg-red-100"
                         >
                           삭제
@@ -512,20 +539,78 @@ export default function Home() {
                       </td>
                     </tr>
                   ))
-              ) : (
-                <tr>
-                  <td colSpan={15} className="border p-8 text-gray-500">
-                    등록된 시험 의뢰 데이터가 없습니다. 첫 의뢰를 등록해 보세요!
-                  </td>
-                </tr>
-              )}
+                ) : (
+                  <tr>
+                    <td colSpan={15} className="border p-8 text-gray-500">
+                      데이터가 존재하지 않습니다.
+                    </td>
+                  </tr>
+                )
+              })()}
             </tbody>
           </table>
+
+          {/* 📄 접수대장 페이지네이션 UI */}
+          {getFilteredRequests().length > itemsPerPage && (
+            <div className="flex justify-center items-center gap-2 mt-6">
+              <button
+                onClick={() => setLedgerPage(prev => Math.max(prev - 1, 1))}
+                disabled={ledgerPage === 1}
+                className="px-3 py-1 border rounded bg-white hover:bg-gray-50 disabled:opacity-50 text-sm font-semibold"
+              >
+                이전
+              </button>
+              {Array.from({ length: Math.ceil(getFilteredRequests().length / itemsPerPage) }, (_, idx) => (
+                <button
+                  key={idx + 1}
+                  onClick={() => setLedgerPage(idx + 1)}
+                  className={`px-3 py-1 border rounded text-sm font-semibold ${ledgerPage === idx + 1 ? 'bg-black text-white' : 'bg-white hover:bg-gray-50'}`}
+                >
+                  {idx + 1}
+                </button>
+              ))}
+              <button
+                onClick={() => setLedgerPage(prev => Math.min(prev + 1, Math.ceil(getFilteredRequests().length / itemsPerPage)))}
+                disabled={ledgerPage === Math.ceil(getFilteredRequests().length / itemsPerPage)}
+                className="px-3 py-1 border rounded bg-white hover:bg-gray-50 disabled:opacity-50 text-sm font-semibold"
+              >
+                다음
+              </button>
+            </div>
+          )}
         </div>
       )}
 
       {activeTab === 'result' && (
         <div className="overflow-x-auto">
+          {/* 🔎 [통합 필터 UI 적용] 결과통보 탭 최상단에도 기본 공란과 전체 구분의 검색 필터가 노출됩니다. */}
+          <div className="mb-4 flex gap-3">
+            <input
+              type="text"
+              placeholder="품목명 검색"
+              className="border p-2 rounded"
+              value={searchProduct}
+              onChange={(e) => {
+                setSearchProduct(e.target.value)
+                setResultPage(1) // 검색 시 결과 탭 페이지 번호 초기화
+              }}
+            />
+            <select
+              className="border p-2 rounded bg-white"
+              value={searchType}
+              onChange={(e) => {
+                setSearchType(e.target.value)
+                setResultPage(1) // 검색 시 결과 탭 페이지 번호 초기화
+              }}
+            >
+              <option value="">전체 구분</option>
+              <option value="액체원료">액체원료</option>
+              <option value="고체원료">고체원료</option>
+              <option value="제품">제품</option>
+              <option value="중간체">중간체</option>
+            </select>
+          </div>
+
           <table className="w-full border text-center whitespace-nowrap text-sm">
             <thead className="bg-gray-100">
               <tr>
@@ -540,65 +625,100 @@ export default function Home() {
               </tr>
             </thead>
             <tbody>
-              {Array.isArray(requestList) && requestList.length > 0 ? (
-                requestList.map((item, index) => (
-                  <tr key={item.id || index} className="hover:bg-gray-50">
-                    <td className="border p-2">{index + 1}</td>
-                    <td className="border p-2">{item.sampleType}</td>
-                    <td className="border p-2">{item.reportNo}</td>
-                    <td className="border p-2">{item.productName}</td>
-                    <td className="border p-2">
-                      <select
-                        className="border p-1 w-full rounded bg-white"
-                        value={item.judgement || ''}
-                        onChange={(e) => updateResult(item.id, 'judgement', e.target.value)}
-                      >
-                        <option value="">선택</option>
-                        <option value="적합">적합</option>
-                        <option value="부적합">부적합</option>
-                      </select>
-                    </td>
-                    <td className="border p-2">
-                      <input
-                        type="date"
-                        className="border p-1 w-full rounded bg-white"
-                        value={item.judgementDate || new Date().toISOString().split('T')[0]}
-                        onChange={(e) => updateResult(item.id, 'judgementDate', e.target.value)}
-                      />
-                    </td>
-                    <td className="border p-2">
-                      <select
-                        className="border p-1 w-full rounded bg-white"
-                        value={item.labelQty || '없음'}
-                        onChange={(e) => updateResult(item.id, 'labelQty', e.target.value)}
-                      >
-                        <option value="없음">없음</option>
-                        {Array.from({ length: 500 }, (_, i) => (
-                          <option key={i + 1} value={String(i + 1)}>
-                            {i + 1}매
+              {(() => {
+                const filtered = getFilteredRequests()
+                const startIndex = (resultPage - 1) * itemsPerPage
+                const paginated = filtered.slice(startIndex, startIndex + itemsPerPage)
+
+                return paginated.length > 0 ? (
+                  paginated.map((item, index) => (
+                    <tr key={item.id || index} className="hover:bg-gray-50">
+                      <td className="border p-2">{startIndex + index + 1}</td>
+                      <td className="border p-2">{item.sampleType}</td>
+                      <td className="border p-2">{item.reportNo}</td>
+                      <td className="border p-2">{item.productName}</td>
+                      <td className="border p-2">
+                        <select
+                          className="border p-1 w-full rounded bg-white"
+                          value={item.judgement || ''}
+                          onChange={(e) => updateResult(item.id, 'judgement', e.target.value)}
+                        >
+                          <option value="">선택</option>
+                          <option value="적합">적합</option>
+                          <option value="부적합">부적합</option>
+                        </select>
+                      </td>
+                      <td className="border p-2">
+                        <input
+                          type="date"
+                          className="border p-1 w-full rounded bg-white"
+                          value={item.judgementDate || new Date().toISOString().split('T')[0]}
+                          onChange={(e) => updateResult(item.id, 'judgementDate', e.target.value)}
+                        />
+                      </td>
+                      <td className="border p-2">
+                        <select
+                          className="border p-1 w-full rounded bg-white"
+                          value={item.labelQty || '없음'}
+                          onChange={(e) => updateResult(item.id, 'labelQty', e.target.value)}
+                        >
+                          <option value="없음">없음</option>
+                          {Array.from({ length: 500 }, (_, i) => (
+                            <option key={i + 1} value={String(i + 1)}>
+                              {i + 1}매
                           </option>
                         ))}
-                      </select>
-                    </td>
-                    <td className="border p-2">
-                      <button
-                        onClick={() => deleteItem(item.id, index)}
-                        className="border bg-red-50 text-red-600 px-2 py-1 rounded hover:bg-red-100"
-                      >
-                        삭제
-                      </button>
+                        </select>
+                      </td>
+                      <td className="border p-2">
+                        <button
+                          onClick={() => deleteItem(item.id, startIndex + index)}
+                          className="border bg-red-50 text-red-600 px-2 py-1 rounded hover:bg-red-100"
+                        >
+                          삭제
+                        </button>
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan={8} className="border p-8 text-gray-500">
+                      데이터가 존재하지 않습니다.
                     </td>
                   </tr>
-                ))
-              ) : (
-                <tr>
-                  <td colSpan={8} className="border p-8 text-gray-500">
-                    결과를 등록할 시험 의뢰 데이터가 없습니다.
-                  </td>
-                </tr>
-              )}
+                )
+              })()}
             </tbody>
           </table>
+
+          {/* 📄 시험결과통보 페이지네이션 UI */}
+          {getFilteredRequests().length > itemsPerPage && (
+            <div className="flex justify-center items-center gap-2 mt-6">
+              <button
+                onClick={() => setResultPage(prev => Math.max(prev - 1, 1))}
+                disabled={resultPage === 1}
+                className="px-3 py-1 border rounded bg-white hover:bg-gray-50 disabled:opacity-50 text-sm font-semibold"
+              >
+                이전
+              </button>
+              {Array.from({ length: Math.ceil(getFilteredRequests().length / itemsPerPage) }, (_, idx) => (
+                <button
+                  key={idx + 1}
+                  onClick={() => setResultPage(idx + 1)}
+                  className={`px-3 py-1 border rounded text-sm font-semibold ${resultPage === idx + 1 ? 'bg-black text-white' : 'bg-white hover:bg-gray-50'}`}
+                >
+                  {idx + 1}
+                </button>
+              ))}
+              <button
+                onClick={() => setResultPage(prev => Math.min(prev + 1, Math.ceil(getFilteredRequests().length / itemsPerPage)))}
+                disabled={resultPage === Math.ceil(getFilteredRequests().length / itemsPerPage)}
+                className="px-3 py-1 border rounded bg-white hover:bg-gray-50 disabled:opacity-50 text-sm font-semibold"
+              >
+                다음
+              </button>
+            </div>
+          )}
         </div>
       )}
     </div>
