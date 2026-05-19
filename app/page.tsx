@@ -37,6 +37,10 @@ export default function Home() {
   const [resultPage, setResultPage] = useState(1)
   const itemsPerPage = 15 // 한 페이지에 노출할 최대 행 수
 
+  // ✍️ [인라인 수정 기능 상태] 현재 수정 중인 행의 ID와 편집 필드 임시 보관함
+  const [editingId, setEditingId] = useState<any>(null)
+  const [editFields, setEditFields] = useState<any>({})
+
   // ⚠️ 중요: 발급받으신 Supabase URL과 복사하신 Anon Key를 입력해 주세요!
   const SUPABASE_URL = 'https://ksuyhgnpiqnytafmabai.supabase.co'
   // 💡 아래 따옴표 안에 아까 찾으신 아주 긴 anon key(공개 API 키) 값을 붙여넣기 해주세요!
@@ -195,8 +199,6 @@ export default function Home() {
       setContainerQty('')
       setTotalQty('')
       setRemarks('')
-      
-      // 🔎 대장 및 통보 탭의 사용자 검색 필터는 저장과 무관하게 상시 "공란" 및 "전체구분" 상태를 변함없이 유지합니다.
     } catch (error: any) {
       console.error('저장 에러:', error)
       alert(
@@ -248,6 +250,55 @@ export default function Home() {
     }
   }
 
+  // ✍️ [접수대장 인라인 수정 시작 처리]
+  const startEditing = (item: any) => {
+    setEditingId(item.id)
+    setEditFields({ ...item }) // 기존 레코드 값을 편집창 임시 보관함에 복사
+  }
+
+  // ✍️ [접수대장 인라인 수정 필드 입력 변경]
+  const handleEditChange = (field: string, value: string) => {
+    setEditFields((prev: any) => ({
+      ...prev,
+      [field]: value
+    }))
+  }
+
+  // ✍️ [접수대장 인라인 수정 완료 및 수파베이스 동기화]
+  const saveEditing = async (id: any) => {
+    if (!supabase) return
+    try {
+      // ⚠️ 만약 의뢰번호/성적번호 등의 채번 체계는 유지하면서 오타만 수정하는 경우,
+      // 수정된 필드만을 묶어서 한번에 업데이트합니다.
+      const { error } = await supabase
+        .from('requests')
+        .update({
+          requester: editFields.requester,
+          productName: editFields.productName,
+          lotNo: editFields.lotNo,
+          sampleType: editFields.sampleType,
+          manufacturerSupplier: editFields.manufacturerSupplier,
+          manufactureDate: editFields.manufactureDate,
+          containerQty: editFields.containerQty,
+          totalQty: editFields.totalQty,
+          requestDate: editFields.requestDate,
+          department: editFields.department,
+          remarks: editFields.remarks,
+        })
+        .eq('id', id)
+
+      if (error) throw error
+
+      // 화면 데이터 전면 갱신 (시험결과통보 탭 등 공유된 모든 레코드가 함께 갱신됩니다)
+      await fetchData()
+      setEditingId(null) // 편집 모드 종료
+      alert('정상적으로 수정 완료되었습니다.')
+    } catch (error: any) {
+      console.error('수정 저장 실패:', error)
+      alert('데이터 수정 저장에 실패했습니다.')
+    }
+  }
+
   // 🔍 공용 데이터 필터링 헬퍼 함수
   const getFilteredRequests = () => {
     return requestList.filter((item) => {
@@ -293,6 +344,7 @@ export default function Home() {
           onClick={() => {
             setActiveTab('ledger')
             setLedgerPage(1) // 탭 클릭 시 첫 페이지로 이동
+            setEditingId(null) // 편집 모드 리셋
           }}
           className={`border px-4 py-2 ${activeTab === 'ledger' ? 'bg-gray-200 font-bold' : ''}`}
         >
@@ -502,7 +554,7 @@ export default function Home() {
                 <th className="border p-2">입고수량</th>
                 <th className="border p-2">의뢰부서</th>
                 <th className="border p-2">비고</th>
-                <th className="border p-2">삭제</th>
+                <th className="border p-2">관리</th>
               </tr>
             </thead>
             <tbody>
@@ -512,33 +564,239 @@ export default function Home() {
                 const paginated = filtered.slice(startIndex, startIndex + itemsPerPage)
 
                 return paginated.length > 0 ? (
-                  paginated.map((item, index) => (
-                    <tr key={item.id || index} className="hover:bg-gray-50">
-                      {/* 고유 No 컬럼 표시 */}
-                      <td className="border p-2">{startIndex + index + 1}</td>
-                      <td className="border p-2">{item.sampleType}</td>
-                      <td className="border p-2">{item.requester || '-'}</td>
-                      <td className="border p-2">{item.requestDate}</td>
-                      <td className="border p-2">{item.requestNo}</td>
-                      <td className="border p-2">{item.reportNo}</td>
-                      <td className="border p-2">{item.productName}</td>
-                      <td className="border p-2">{item.lotNo}</td>
-                      <td className="border p-2">{item.manufacturerSupplier}</td>
-                      <td className="border p-2">{item.manufactureDate}</td>
-                      <td className="border p-2">{item.containerQty}</td>
-                      <td className="border p-2">{item.totalQty}</td>
-                      <td className="border p-2">{item.department}</td>
-                      <td className="border p-2">{item.remarks}</td>
-                      <td className="border p-2">
-                        <button
-                          onClick={() => deleteItem(item.id, startIndex + index)}
-                          className="border bg-red-50 text-red-600 px-2 py-1 rounded hover:bg-red-100"
-                        >
-                          삭제
-                        </button>
-                      </td>
-                    </tr>
-                  ))
+                  paginated.map((item, index) => {
+                    const isEditing = editingId === item.id;
+
+                    return (
+                      <tr key={item.id || index} className="hover:bg-gray-50">
+                        <td className="border p-2">{startIndex + index + 1}</td>
+                        
+                        {/* 1. 시험항목 구분 */}
+                        <td className="border p-2">
+                          {isEditing ? (
+                            <select
+                              className="border p-1 rounded bg-white text-xs"
+                              value={editFields.sampleType || ''}
+                              onChange={(e) => handleEditChange('sampleType', e.target.value)}
+                            >
+                              <option value="액체원료">액체원료</option>
+                              <option value="고체원료">고체원료</option>
+                              <option value="중간체">중간체</option>
+                              <option value="제품">제품</option>
+                            </select>
+                          ) : (
+                            item.sampleType
+                          )}
+                        </td>
+
+                        {/* 2. 의뢰자 */}
+                        <td className="border p-2">
+                          {isEditing ? (
+                            <input
+                              type="text"
+                              className="border p-1 rounded text-xs w-20"
+                              value={editFields.requester || ''}
+                              onChange={(e) => handleEditChange('requester', e.target.value)}
+                            />
+                          ) : (
+                            item.requester || '-'
+                          )}
+                        </td>
+
+                        {/* 3. 의뢰일 */}
+                        <td className="border p-2">
+                          {isEditing ? (
+                            <input
+                              type="date"
+                              className="border p-1 rounded text-xs"
+                              value={editFields.requestDate || ''}
+                              onChange={(e) => handleEditChange('requestDate', e.target.value)}
+                            />
+                          ) : (
+                            item.requestDate
+                          )}
+                        </td>
+
+                        {/* 의뢰번호 / 성적번호 (자동 채번 고유식별 필드이므로 편집 제외) */}
+                        <td className="border p-2 font-mono text-xs">{item.requestNo}</td>
+                        <td className="border p-2 font-mono text-xs">{item.reportNo}</td>
+
+                        {/* 4. 품명 */}
+                        <td className="border p-2">
+                          {isEditing ? (
+                            <select
+                              className="border p-1 rounded bg-white text-xs"
+                              value={editFields.productName || ''}
+                              onChange={(e) => handleEditChange('productName', e.target.value)}
+                            >
+                              <option value="O0330">O0330</option>
+                              <option value="O0711">O0711</option>
+                              <option value="O0731">O0731</option>
+                              <option value="O0830">O0830</option>
+                              <option value="G0720">G0720</option>
+                              <option value="LX0556">LX0556</option>
+                              <option value="LX0566">LX0566</option>
+                              <option value="DCPM-383">DCPM-383</option>
+                              <option value="HTM-K940">HTM-K940</option>
+                              <option value="LHT-6634">LHT-6634</option>
+                              <option value="GP-A079">GP-A079</option>
+                              <option value="ACT">ACT</option>
+                              <option value="EA">EA</option>
+                              <option value="EtOH(99.5%)">EtOH(99.5%)</option>
+                              <option value="MC">MC</option>
+                              <option value="MCB">MCB</option>
+                              <option value="THF">THF</option>
+                              <option value="MeOH">MeOH</option>
+                              <option value="TOL">TOL</option>
+                              <option value="Xylene">Xylene</option>
+                              <option value="HEP">HEP</option>
+                              <option value="EDC">EDC</option>
+                            </select>
+                          ) : (
+                            item.productName
+                          )}
+                        </td>
+
+                        {/* 5. 제조번호 */}
+                        <td className="border p-2">
+                          {isEditing ? (
+                            <input
+                              type="text"
+                              className="border p-1 rounded text-xs w-28"
+                              value={editFields.lotNo || ''}
+                              onChange={(e) => handleEditChange('lotNo', e.target.value)}
+                            />
+                          ) : (
+                            item.lotNo
+                          )}
+                        </td>
+
+                        {/* 6. 제조자/납품자 */}
+                        <td className="border p-2">
+                          {isEditing ? (
+                            <input
+                              type="text"
+                              className="border p-1 rounded text-xs w-24"
+                              value={editFields.manufacturerSupplier || ''}
+                              onChange={(e) => handleEditChange('manufacturerSupplier', e.target.value)}
+                            />
+                          ) : (
+                            item.manufacturerSupplier
+                          )}
+                        </td>
+
+                        {/* 7. 제조/입고 일자 */}
+                        <td className="border p-2">
+                          {isEditing ? (
+                            <input
+                              type="date"
+                              className="border p-1 rounded text-xs"
+                              value={editFields.manufactureDate || ''}
+                              onChange={(e) => handleEditChange('manufactureDate', e.target.value)}
+                            />
+                          ) : (
+                            item.manufactureDate
+                          )}
+                        </td>
+
+                        {/* 8. 용기수량 */}
+                        <td className="border p-2">
+                          {isEditing ? (
+                            <input
+                              type="text"
+                              className="border p-1 rounded text-xs w-20"
+                              value={editFields.containerQty || ''}
+                              onChange={(e) => handleEditChange('containerQty', e.target.value)}
+                            />
+                          ) : (
+                            item.containerQty
+                          )}
+                        </td>
+
+                        {/* 9. 입고수량 */}
+                        <td className="border p-2">
+                          {isEditing ? (
+                            <input
+                              type="text"
+                              className="border p-1 rounded text-xs w-20"
+                              value={editFields.totalQty || ''}
+                              onChange={(e) => handleEditChange('totalQty', e.target.value)}
+                            />
+                          ) : (
+                            item.totalQty
+                          )}
+                        </td>
+
+                        {/* 10. 의뢰부서 */}
+                        <td className="border p-2">
+                          {isEditing ? (
+                            <select
+                              className="border p-1 rounded bg-white text-xs"
+                              value={editFields.department || ''}
+                              onChange={(e) => handleEditChange('department', e.target.value)}
+                            >
+                              <option value="음성공장 합성팀">음성공장 합성팀</option>
+                              <option value="음성공장 품질팀">음성공장 품질팀</option>
+                              <option value="화성공장">화성공장</option>
+                            </select>
+                          ) : (
+                            item.department
+                          )}
+                        </td>
+
+                        {/* 11. 비고 */}
+                        <td className="border p-2">
+                          {isEditing ? (
+                            <input
+                              type="text"
+                              className="border p-1 rounded text-xs w-32"
+                              value={editFields.remarks || ''}
+                              onChange={(e) => handleEditChange('remarks', e.target.value)}
+                            />
+                          ) : (
+                            item.remarks
+                          )}
+                        </td>
+
+                        {/* 🔧 관리 조작 버튼 영역 (수정/저장/취소/삭제) */}
+                        <td className="border p-2">
+                          <div className="flex justify-center gap-1">
+                            {isEditing ? (
+                              <>
+                                <button
+                                  onClick={() => saveEditing(item.id)}
+                                  className="border bg-blue-600 text-white px-2 py-1 rounded hover:bg-blue-700 text-xs font-semibold"
+                                >
+                                  저장
+                                </button>
+                                <button
+                                  onClick={() => setEditingId(null)}
+                                  className="border bg-gray-100 text-gray-700 px-2 py-1 rounded hover:bg-gray-200 text-xs"
+                                >
+                                  취소
+                                </button>
+                              </>
+                            ) : (
+                              <>
+                                <button
+                                  onClick={() => startEditing(item)}
+                                  className="border bg-gray-50 text-gray-700 px-2 py-1 rounded hover:bg-gray-150 text-xs font-semibold"
+                                >
+                                  수정
+                                </button>
+                                <button
+                                  onClick={() => deleteItem(item.id, startIndex + index)}
+                                  className="border bg-red-50 text-red-600 px-2 py-1 rounded hover:bg-red-100 text-xs"
+                                >
+                                  삭제
+                                </button>
+                              </>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })
                 ) : (
                   <tr>
                     <td colSpan={15} className="border p-8 text-gray-500">
