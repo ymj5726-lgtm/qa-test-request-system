@@ -337,15 +337,15 @@ const downloadExcel = () => {
   const headers = ["No", "시험항목", "의뢰자", "의뢰일", "의뢰번호", "성적번호", "품명", "제조번호", "제조자/납품자", "채취량", "제조/입고 일자", "용기수량", "입고수량", "의뢰부서", "비고"];
   
 // 데이터 내 쉼표나 따옴표가 있을 경우 안전하게 처리하는 함수
-  const formatCell = (cell) => {
+const formatCell = (cell) => {
     let value = String(cell || "");
     
-    // 데이터 내에 따옴표(")가 있다면 두 번 연속(")으로 바꿔서 엑셀이 인식하게 함
+    // 데이터 내에 따옴표가 있다면 두 개로 치환 (CSV 표준)
     if (value.includes('"')) {
       value = value.replace(/"/g, '""');
     }
     
-    // 쉼표(,)나 따옴표(")가 포함되어 있다면 전체를 큰따옴표로 감쌈
+    // 쉼표, 따옴표, 줄바꿈이 하나라도 있으면 전체를 따옴표로 감쌈
     if (value.includes(',') || value.includes('"') || value.includes('\n')) {
       return `"${value}"`;
     }
