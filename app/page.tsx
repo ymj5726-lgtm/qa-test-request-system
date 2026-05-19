@@ -5,6 +5,15 @@ import { useEffect, useState } from 'react'
 // Supabase 클라이언트 라이브러리를 위한 전역 변수
 let supabase: any = null
 
+// 🏢 요청하신 음성공장 거래 제조처/납품처 프리셋 목록으로 교체했습니다.
+const manufacturerList = [
+  '(주)파마코스텍',
+  'SDC',
+  '솔루스첨단소재',
+  'SKMJ',
+  '동진쎄미켐'
+]
+
 export default function Home() {
   const [activeTab, setActiveTab] = useState('request')
 
@@ -15,7 +24,8 @@ export default function Home() {
 
   const [judgement, setJudgement] = useState('')
   const [labelQty, setLabelQty] = useState('없음')
-  const [manufacturerSupplier, setManufacturerSupplier] = useState('')
+  // 첫 번째 제조처인 '(주)파마코스텍'을 기본 선택값으로 지정합니다.
+  const [manufacturerSupplier, setManufacturerSupplier] = useState('(주)파마코스텍') 
   const [containerQty, setContainerQty] = useState('')
   const [totalQty, setTotalQty] = useState('')
   const [remarks, setRemarks] = useState('')
@@ -40,6 +50,9 @@ export default function Home() {
   // ✍️ [인라인 수정 기능 상태] 현재 수정 중인 행의 ID와 편집 필드 임시 보관함
   const [editingId, setEditingId] = useState<any>(null)
   const [editFields, setEditFields] = useState<any>({})
+
+  // ✍️ [제조자 수기 작성 모드 상태] 드롭다운 외 직접 입력을 처리하기 위한 상태
+  const [isCustomManufacturer, setIsCustomManufacturer] = useState(false)
 
   // ⚠️ 중요: 발급받으신 Supabase URL과 복사하신 Anon Key를 입력해 주세요!
   const SUPABASE_URL = 'https://ksuyhgnpiqnytafmabai.supabase.co'
@@ -190,12 +203,13 @@ export default function Home() {
       
       alert(`저장 완료\n의뢰번호: ${autoRequestNo}\n성적번호: ${autoReportNo}`)
       
-      // ⭐ 저장 완료 후 폼 입력값 리셋: 품명과 시험 구분을 최초 가본 설정 상태로 강제 복구합니다.
+      // ⭐ 저장 완료 후 폼 입력값 리셋
       setRequester('')
       setProductName('O0330')
       setLotNo('')
       setSampleType('액체원료')
-      setManufacturerSupplier('')
+      setManufacturerSupplier('(주)파마코스텍') // 기본 선택 제조사로 리셋
+      setIsCustomManufacturer(false)      // 수기 작성 모드 꺼짐 리셋
       setContainerQty('')
       setTotalQty('')
       setRemarks('')
@@ -268,8 +282,6 @@ export default function Home() {
   const saveEditing = async (id: any) => {
     if (!supabase) return
     try {
-      // ⚠️ 만약 의뢰번호/성적번호 등의 채번 체계는 유지하면서 오타만 수정하는 경우,
-      // 수정된 필드만을 묶어서 한번에 업데이트합니다.
       const { error } = await supabase
         .from('requests')
         .update({
@@ -366,7 +378,7 @@ export default function Home() {
           <div>
             <label className="block mb-1 font-semibold text-sm text-gray-700">의뢰자</label>
             <input
-              className="border p-2 w-full"
+              className="border p-2 w-full rounded"
               placeholder="의뢰자 이름 입력"
               value={requester}
               onChange={(e) => setRequester(e.target.value)}
@@ -376,7 +388,7 @@ export default function Home() {
           <div>
             <label className="block mb-1 font-semibold text-sm text-gray-700">품명</label>
             <select
-              className="border p-2 w-full"
+              className="border p-2 w-full rounded bg-white"
               value={productName}
               onChange={(e) => setProductName(e.target.value)}
             >
@@ -408,28 +420,62 @@ export default function Home() {
           <div>
             <label className="block mb-1 font-semibold text-sm text-gray-700">제조번호 (Lot No.)</label>
             <input
-              className="border p-2 w-full"
+              className="border p-2 w-full rounded"
               placeholder="제조번호 입력"
               value={lotNo}
               onChange={(e) => setLotNo(e.target.value)}
             />
           </div>
 
+          {/* 🏢 [제조자/납품자 드롭다운 및 직접수기입력 병행 처리] */}
           <div>
             <label className="block mb-1 font-semibold text-sm text-gray-700">제조자 / 납품자</label>
-            <input
-              className="border p-2 w-full"
-              placeholder="제조자 / 납품자 입력"
-              value={manufacturerSupplier}
-              onChange={(e) => setManufacturerSupplier(e.target.value)}
-            />
+            {!isCustomManufacturer ? (
+              <select
+                className="border p-2 w-full rounded bg-white"
+                value={manufacturerSupplier}
+                onChange={(e) => {
+                  if (e.target.value === 'custom_write') {
+                    setIsCustomManufacturer(true)
+                    setManufacturerSupplier('') // 빈 값으로 비우고 수기 입력 대기
+                  } else {
+                    setManufacturerSupplier(e.target.value)
+                  }
+                }}
+              >
+                <option value="">-- 제조/납품처 선택 --</option>
+                {manufacturerList.map((mfg) => (
+                  <option key={mfg} value={mfg}>{mfg}</option>
+                ))}
+                <option value="custom_write">🖋️ 직접 입력 (수기 작성)</option>
+              </select>
+            ) : (
+              <div className="flex gap-2">
+                <input
+                  className="border p-2 w-full rounded"
+                  placeholder="(주)파마코스텍, SDC 등 직접 입력"
+                  value={manufacturerSupplier}
+                  onChange={(e) => setManufacturerSupplier(e.target.value)}
+                />
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsCustomManufacturer(false)
+                    setManufacturerSupplier('(주)파마코스텍') // 기본값 복원
+                  }}
+                  className="border px-4 py-2 bg-gray-100 rounded text-sm hover:bg-gray-200 font-semibold whitespace-nowrap"
+                >
+                  목록에서 선택
+                </button>
+              </div>
+            )}
           </div>
 
           <div>
             <label className="block mb-1 font-semibold text-sm text-gray-700">제조 / 입고 일자</label>
             <input
               type="date"
-              className="border p-2 w-full"
+              className="border p-2 w-full rounded"
               value={manufactureDate}
               onChange={(e) => setManufactureDate(e.target.value)}
             />
@@ -438,7 +484,7 @@ export default function Home() {
           <div>
             <label className="block mb-1 font-semibold text-sm text-gray-700">용기 수량</label>
             <input
-              className="border p-2 w-full"
+              className="border p-2 w-full rounded"
               placeholder="예: 10 Can, 5 Drum 등"
               value={containerQty}
               onChange={(e) => setContainerQty(e.target.value)}
@@ -448,7 +494,7 @@ export default function Home() {
           <div>
             <label className="block mb-1 font-semibold text-sm text-gray-700">제조 / 입고 수량</label>
             <input
-              className="border p-2 w-full"
+              className="border p-2 w-full rounded"
               placeholder="예: 200kg, 1,000L 등"
               value={totalQty}
               onChange={(e) => setTotalQty(e.target.value)}
@@ -459,7 +505,7 @@ export default function Home() {
             <label className="block mb-1 font-semibold text-sm text-gray-700">의뢰일</label>
             <input
               type="date"
-              className="border p-2 w-full"
+              className="border p-2 w-full rounded"
               value={requestDate}
               onChange={(e) => setRequestDate(e.target.value)}
             />
@@ -468,7 +514,7 @@ export default function Home() {
           <div>
             <label className="block mb-1 font-semibold text-sm text-gray-700">의뢰부서</label>
             <select
-              className="border p-2 w-full"
+              className="border p-2 w-full rounded bg-white"
               value={department}
               onChange={(e) => setDepartment(e.target.value)}
             >
@@ -481,7 +527,7 @@ export default function Home() {
           <div>
             <label className="block mb-1 font-semibold text-sm text-gray-700">비고 (참고사항)</label>
             <input
-              className="border p-2 w-full"
+              className="border p-2 w-full rounded"
               placeholder="비고 입력"
               value={remarks}
               onChange={(e) => setRemarks(e.target.value)}
@@ -491,7 +537,7 @@ export default function Home() {
           <div className="mb-4">
             <label className="block mb-1 font-semibold text-sm text-gray-700">시험항목 종류 (구분)</label>
             <select
-              className="border p-2 w-full"
+              className="border p-2 w-full rounded bg-white"
               value={sampleType}
               onChange={(e) => setSampleType(e.target.value)}
             >
@@ -617,7 +663,7 @@ export default function Home() {
                           )}
                         </td>
 
-                        {/* 의뢰번호 / 성적번호 (자동 채번 고유식별 필드이므로 편집 제외) */}
+                        {/* 의뢰번호 / 성적번호 */}
                         <td className="border p-2 font-mono text-xs">{item.requestNo}</td>
                         <td className="border p-2 font-mono text-xs">{item.reportNo}</td>
 
