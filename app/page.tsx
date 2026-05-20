@@ -214,17 +214,6 @@ export default function Home() {
     }
   }
 
-  const startEdit = (item: any) => {
-  setEditingId(item.id);
-  // 현재 item의 값을 editFields에 복사하여 입력창에 기본값으로 뜨게 함
-  setEditFields({
-    manager: item.manager || '',
-    judgement: item.judgement || '',
-    judgementDate: item.judgementDate || today, // 오늘 날짜가 기본
-    labelQty: item.labelQty || '없음' // '없음'이 기본
-  });
-};
-
   const handleEditChange = (field: string, value: string) => {
     setEditFields((prev: any) => ({ ...prev, [field]: value }))
   }
@@ -256,11 +245,17 @@ export default function Home() {
     })
   }
 
- // 수정 모드 진입
-  const startEdit = (row: any) => {
-    setEditingId(row.id)
-    setEditFields({ ...row })
-  }
+// 수정 모드 진입 시 사용하는 단 하나의 startEdit 함수
+const startEdit = (item: any) => {
+  setEditingId(item.id);
+  // 이전 데이터가 있으면 가져오고, 없으면 기본값(오늘날짜, '없음' 등)으로 세팅
+  setEditFields({
+    manager: item.manager || '',
+    judgement: item.judgement || '',
+    judgementDate: item.judgementDate || today, 
+    labelQty: item.labelQty || '없음' 
+  });
+};
 
   // 데이터 저장 및 읽기 모드 전환
   const saveItem = async (id: number) => {
