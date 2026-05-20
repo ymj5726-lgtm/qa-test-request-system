@@ -638,21 +638,22 @@ export default function Home() {
                       </td>
 
                       <td className="border p-2">
-                        {isEditing || isEmpty ? (
-                        <select className="border p-1 w-full rounded" value={isEditing ? editFields.judgement : item.judgement || ''} onChange={(e) => setEditFields({...editFields, judgement: e.target.value})}>
+                    {isEditing || isEmpty ? (
+                      <select className="border p-1 w-full rounded" value={isEditing ? editFields.result : item.judgement || ''} onChange={(e) => setEditFields({...editFields, result: e.target.value})}>
                         <option value="">선택</option><option value="적합">적합</option><option value="부적합">부적합</option>
                       </select>
-                        ) : (item.judgement)}
-                      </td>
-                      <td className="border p-2">
+                    ) : (item.judgement)}
+                  </td>
+
+                  <td className="border p-2">
                     {isEditing || isEmpty ? (
-                      <input type="date" className="border p-1 w-full rounded" value={isEditing ? editFields.judgementDate : item.judgementDate || ''} onChange={(e) => setEditFields({...editFields, judgementDate: e.target.value})} />
+                      <input type="date" className="border p-1 w-full rounded" value={isEditing ? editFields.date : item.judgementDate || ''} onChange={(e) => setEditFields({...editFields, date: e.target.value})} />
                     ) : (item.judgementDate)}
                   </td>
 
                   <td className="border p-2">
                     {isEditing || isEmpty ? (
-                      <select className="border p-1 w-full rounded" value={isEditing ? editFields.labelQty : item.labelQty || '없음'} onChange={(e) => setEditFields({...editFields, labelQty: e.target.value})}>
+                      <select className="border p-1 w-full rounded" value={isEditing ? editFields.label_qty : item.labelQty || '없음'} onChange={(e) => setEditFields({...editFields, label_qty: e.target.value})}>
                         <option value="없음">없음</option>
                         {Array.from({ length: 500 }, (_, i) => (<option key={i + 1} value={String(i + 1)}>{i + 1}매</option>))}
                       </select>
@@ -668,17 +669,17 @@ export default function Home() {
                     <button onClick={() => deleteResultItem(item.id)} className="px-2 py-1 border border-red-500 text-red-500 text-xs rounded hover:bg-red-50">삭제</button>
                   </td>
                 </tr>
-                  );
-                  })
-                ) : (
-                  <tr><td colSpan={9} className="border p-8 text-gray-500">데이터가 존재하지 않습니다.</td></tr>
-                );
-              })()}
-            </tbody>
-          </table>
+              );
+            })
+          ) : (
+            <tr><td colSpan={9} className="border p-8 text-gray-500">데이터가 존재하지 않습니다.</td></tr>
+          );
+        })()}
+      </tbody>
+    </table>
           
           {/* 페이지네이션 UI */}
-    {getFilteredRequests().length > itemsPerPage && (
+          {getFilteredRequests().length > itemsPerPage && (
       <div className="flex justify-center items-center gap-2 mt-6">
         <button onClick={() => setResultPage(prev => Math.max(prev - 1, 1))} disabled={resultPage === 1} className="px-3 py-1 border rounded bg-white hover:bg-gray-50 disabled:opacity-50">이전</button>
         {Array.from({ length: Math.ceil(getFilteredRequests().length / itemsPerPage) }, (_, idx) => (
