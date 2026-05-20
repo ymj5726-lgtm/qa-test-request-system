@@ -246,7 +246,7 @@ export default function Home() {
   const saveItem = async (id: number) => {
     try {
       // 데이터베이스 컬럼명에 맞게 키를 수정했습니다.
-      const { error } = await supabase.from('result').update({
+      const { error } = await supabase.from('requests').update({
         manager: editFields.manager,
         judgement: editFields.judgement,      // editFields.result -> judgement
         judgementDate: editFields.judgementDate,    // editFields.date -> judgementDate
@@ -267,7 +267,7 @@ export default function Home() {
   const deleteResultItem = async (id: number) => {
     if (!window.confirm('선택한 의뢰를 삭제하시겠습니까?')) return
     try {
-      const { error } = await supabase.from('result').delete().eq('id', id)
+      const { error } = await supabase.from('requests').delete().eq('id', id)
       if (error) throw error
       fetchData()
     } catch (error) {
