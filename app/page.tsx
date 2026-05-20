@@ -218,7 +218,7 @@ export default function Home() {
     setEditFields((prev: any) => ({ ...prev, [field]: value }))
   }
 
-  const saveEditing = async (id: any) => {
+  const saveItem = async (id: any) => {
     if (!supabase) return
     try {
       const { error } = await supabase.from('requests').update({
@@ -236,6 +236,44 @@ export default function Home() {
       alert('수정 실패')
     }
   }
+  const saveItem = async (id: any) => {
+  if (!supabase) return;
+  try {
+    // 모든 필드를 포함하여 한 번에 업데이트
+    const { error } = await supabase
+      .from('requests')
+      .update({
+        // 1. 기본 정보 필드
+        requester: editFields.requester,
+        productName: editFields.productName,
+        lotNo: editFields.lotNo,
+        sampleType: editFields.sampleType,
+        manufacturerSupplier: editFields.manufacturerSupplier,
+        manufactureDate: editFields.manufactureDate,
+        containerQty: editFields.containerQty,
+        totalQty: editFields.totalQty,
+        requestDate: editFields.requestDate,
+        department: editFields.department,
+        remarks: editFields.remarks,
+        sampleQty: editFields.sampleQty,
+        // 2. 결과 정보 필드
+        manager: editFields.manager,
+        judgement: editFields.judgement,
+        judgementDate: editFields.judgementDate,
+        labelQty: editFields.labelQty,
+      })
+      .eq('id', id);
+
+    if (error) throw error;
+
+    await fetchData(); // 데이터 새로고침
+    setEditingId(null); // 수정 모드 종료
+    alert('저장 완료');
+  } catch (error: any) {
+    console.error("저장 실패 원인:", error);
+    alert(`저장 실패: ${error.message}`);
+  }
+};
 
   const getFilteredRequests = () => {
     return requestList.filter((item) => {
@@ -256,27 +294,6 @@ const startEdit = (item: any) => {
     labelQty: item.labelQty || '없음' 
   });
 };
-
-  // 데이터 저장 및 읽기 모드 전환
-  const saveItem = async (id: number) => {
-    try {
-      // 데이터베이스 컬럼명에 맞게 키를 수정했습니다.
-      const { error } = await supabase.from('requests').update({
-        manager: editFields.manager,
-        judgement: editFields.judgement,      // editFields.result -> judgement
-        judgementDate: editFields.judgementDate,    // editFields.date -> judgementDate
-        labelQty: editFields.labelQty     // editFields.label_qty -> labelQty
-      }).eq('id', id);
-      
-      if (error) throw error;
-      alert('저장되었습니다.');
-      setEditingId(null);
-      fetchData();
-    } catch (error) {
-      console.error("저장 실패 원인:", error);
-      alert('저장 실패');
-    }
-  }
 
   // [시험결과통보 탭 전용] 삭제 함수 (기존 deleteItem 건드리지 않음)
   const deleteResultItem = async (id: number) => {
@@ -566,7 +583,7 @@ const startEdit = (item: any) => {
                         <td className="border p-2">
                           <div className="flex justify-center gap-1">
                             {isEditing ? (
-                              <><button onClick={() => saveEdit(item.id)} className="border bg-blue-600 text-white px-2 py-1 rounded hover:bg-blue-700 text-xs font-semibold">저장</button><button onClick={() => setEditingId(null)} className="border bg-gray-100 text-gray-700 px-2 py-1 rounded hover:bg-gray-200 text-xs">취소</button></>
+                              <><button onClick={() => saveItem(item.id)} className="border bg-blue-600 text-white px-2 py-1 rounded hover:bg-blue-700 text-xs font-semibold">저장</button><button onClick={() => setEditingId(null)} className="border bg-gray-100 text-gray-700 px-2 py-1 rounded hover:bg-gray-200 text-xs">취소</button></>
                             ) : (
                               <><button onClick={() => startEdit(item)} className="border bg-gray-50 text-gray-700 px-2 py-1 rounded hover:bg-gray-150 text-xs font-semibold">수정</button><button onClick={() => deleteItem(item.id, startIndex + index)} className="border bg-red-50 text-red-600 px-2 py-1 rounded hover:bg-red-100 text-xs">삭제</button></>
                             )}
