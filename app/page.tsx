@@ -601,18 +601,17 @@ export default function Home() {
               </tr>
             </thead>
             <tbody>
-               {results.map((r, index) => {
-                // 데이터가 비어있으면(처음 생성이면) 무조건 편집모드처럼 보이게 처리
-                const isNew = !r.manager || r.manager === '담당자 선택'
-                const isEditing = editingId === r.id || isNew
-
               {(() => {
                 const filtered = getFilteredRequests()
                 const startIndex = (resultPage - 1) * itemsPerPage
                 const paginated = filtered.slice(startIndex, startIndex + itemsPerPage)
 
                 return paginated.length > 0 ? (
-                  paginated.map((item, index) => (
+                  paginated.map((item, index) => {
+                    const isEditing = editingId === item.id;
+                    const isEmpty = !item.manager; // 데이터가 비어있으면 편집모드
+                    
+                    return (
                     <tr key={item.id || index} className="hover:bg-gray-50">
                       <td className="border p-2">{startIndex + index + 1}</td>
                       <td className="border p-2">{item.sampleType}</td>
@@ -621,10 +620,11 @@ export default function Home() {
                       
                       {/* 🎨 수정사항 3: 담당자 선택 드롭다운 셀 추가 */}
                       <td className="border p-2">
+                        {isEditing || isEmpty ? (
                         <select
                           className="border p-1 w-full rounded bg-white text-blue-700 font-semibold"
-                          value={item.manager || ''}
-                          onChange={(e) => updateResult(item.id, 'manager', e.target.value)}
+                          value={isEditing ? editFields.manager : item.manager || ''}
+                          onChange={(e) => setEditFields({...editFields, manager: e.target.value})}
                         >
                           <option value="">담당자 선택</option>
                           <option value="김정현">김정현</option>
@@ -632,45 +632,57 @@ export default function Home() {
                           <option value="신정수">신정수</option>
                           <option value="이지우">이지우</option>
                         </select>
+                      ) : (
+                      <span className="font-semibold text-blue-700">{item.manager}</span>
+                    )}
                       </td>
 
                       <td className="border p-2">
-                        <select className="border p-1 w-full rounded bg-white" value={item.judgement || ''} onChange={(e) => updateResult(item.id, 'judgement', e.target.value)}>
-                          <option value="">선택</option><option value="적합">적합</option><option value="부적합">부적합</option>
-                        </select>
+                        {isEditing || isEmpty ? (
+                        <select className="border p-1 w-full rounded" value={isEditing ? editFields.judgement : item.judgement || ''} onChange={(e) => setEditFields({...editFields, judgement: e.target.value})}>
+                        <option value="">선택</option><option value="적합">적합</option><option value="부적합">부적합</option>
+                      </select>
+                        ) : (item.judgement)}
                       </td>
                       <td className="border p-2">
-                        <input type="date" className="border p-1 w-full rounded bg-white" value={item.judgementDate || new Date().toISOString().split('T')[0]} onChange={(e) => updateResult(item.id, 'judgementDate', e.target.value)} />
-                      </td>
-                      <td className="border p-2">
-                        <select className="border p-1 w-full rounded bg-white" value={item.labelQty || '없음'} onChange={(e) => updateResult(item.id, 'labelQty', e.target.value)}>
-                          <option value="없음">없음</option>
-                          {Array.from({ length: 500 }, (_, i) => (<option key={i + 1} value={String(i + 1)}>{i + 1}매</option>))}
-                        </select>
-                      </td>
-                       <td className="border border-black p-2 flex gap-1 justify-center">
-                      {editingId === r.id || isNew ? (
-                        <button onClick={() => saveItem(r.id)} className="px-2 py-1 bg-green-600 text-white text-xs">저장</button>
-                      ) : (
-                        <button onClick={() => startEdit(r)} className="px-2 py-1 border border-black text-xs hover:bg-gray-100">수정</button>
-                      )}
-                      {/* 새 함수 적용 */}
-                      <button onClick={() => deleteResultItem(r.id)} className="px-2 py-1 border border-red-500 text-red-500 text-xs hover:bg-red-50">삭제</button>
-                    </td>
-                    </tr>
+                    {isEditing || isEmpty ? (
+                      <input type="date" className="border p-1 w-full rounded" value={isEditing ? editFields.judgementDate : item.judgementDate || ''} onChange={(e) => setEditFields({...editFields, judgementDate: e.target.value})} />
+                    ) : (item.judgementDate)}
+                  </td>
+
+                  <td className="border p-2">
+                    {isEditing || isEmpty ? (
+                      <select className="border p-1 w-full rounded" value={isEditing ? editFields.labelQty : item.labelQty || '없음'} onChange={(e) => setEditFields({...editFields, labelQty: e.target.value})}>
+                        <option value="없음">없음</option>
+                        {Array.from({ length: 500 }, (_, i) => (<option key={i + 1} value={String(i + 1)}>{i + 1}매</option>))}
+                      </select>
+                    ) : (item.labelQty)}
+                  </td>
+
+                  <td className="border p-2 flex gap-1 justify-center">
+                    {isEditing || isEmpty ? (
+                      <button onClick={() => saveItem(item.id)} className="px-2 py-1 bg-green-600 text-white text-xs rounded">저장</button>
+                    ) : (
+                      <button onClick={() => startEdit(item)} className="px-2 py-1 border border-black text-xs rounded hover:bg-gray-100">수정</button>
+                    )}
+                    <button onClick={() => deleteResultItem(item.id)} className="px-2 py-1 border border-red-500 text-red-500 text-xs rounded hover:bg-red-50">삭제</button>
+                  </td>
+                </tr>
                   ))
                 ) : (<tr><td colSpan={9} className="border p-8 text-gray-500">데이터가 존재하지 않습니다.</td></tr>)
               })()}
             </tbody>
           </table>
-          {getFilteredRequests().length > itemsPerPage && (
-            <div className="flex justify-center items-center gap-2 mt-6">
-              <button onClick={() => setResultPage(prev => Math.max(prev - 1, 1))} disabled={resultPage === 1} className="px-3 py-1 border rounded bg-white hover:bg-gray-50 disabled:opacity-50 text-sm font-semibold">이전</button>
-              {Array.from({ length: Math.ceil(getFilteredRequests().length / itemsPerPage) }, (_, idx) => (
-                <button key={idx + 1} onClick={() => setResultPage(idx + 1)} className={`px-3 py-1 border rounded text-sm font-semibold ${resultPage === idx + 1 ? 'bg-black text-white' : 'bg-white hover:bg-gray-50'}`}>{idx + 1}</button>
-              ))}
-              <button onClick={() => setResultPage(prev => Math.min(prev + 1, Math.ceil(getFilteredRequests().length / itemsPerPage)))} disabled={resultPage === Math.ceil(getFilteredRequests().length / itemsPerPage)} className="px-3 py-1 border rounded bg-white hover:bg-gray-50 disabled:opacity-50 text-sm font-semibold">다음</button>
-            </div>
+          
+          {/* 페이지네이션 UI */}
+    {getFilteredRequests().length > itemsPerPage && (
+      <div className="flex justify-center items-center gap-2 mt-6">
+        <button onClick={() => setResultPage(prev => Math.max(prev - 1, 1))} disabled={resultPage === 1} className="px-3 py-1 border rounded bg-white hover:bg-gray-50 disabled:opacity-50">이전</button>
+        {Array.from({ length: Math.ceil(getFilteredRequests().length / itemsPerPage) }, (_, idx) => (
+          <button key={idx + 1} onClick={() => setResultPage(idx + 1)} className={`px-3 py-1 border rounded ${resultPage === idx + 1 ? 'bg-black text-white' : 'bg-white'}`}>{idx + 1}</button>
+        ))}
+        <button onClick={() => setResultPage(prev => Math.min(prev + 1, Math.ceil(getFilteredRequests().length / itemsPerPage)))} disabled={resultPage === Math.ceil(getFilteredRequests().length / itemsPerPage)} className="px-3 py-1 border rounded bg-white hover:bg-gray-50 disabled:opacity-50">다음</button>
+      </div>
           )}
         </div>
       )}
