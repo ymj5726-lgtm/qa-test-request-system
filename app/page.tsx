@@ -273,8 +273,16 @@ export default function Home() {
         <img src="/logo.png" alt="회사 워터마크" className="w-[600px] h-auto grayscale" />
       </div>
 
-      <h1 className="text-3xl font-bold mb-8 relative z-10">시험 의뢰 관리 시스템 (Supabase)</h1>
-
+      <div className="flex items-center gap-4 mb-6">
+        <img 
+          src="/logo.png" 
+          alt="PHARMACOS Logo" 
+          className="h-12 w-auto object-contain" 
+          onError={(e) => (e.currentTarget.style.display = 'none')} 
+        />
+        <h1 className="text-3xl font-bold mb-8 relative z-10">시험 의뢰 관리 시스템 (Supabase)</h1>
+      </div>
+      
       {!isDbReady && !dbError && (
         <div className="bg-yellow-50 text-yellow-800 p-3 rounded mb-6 text-sm border border-yellow-200">데이터베이스 연결 준비 중...</div>
       )}
