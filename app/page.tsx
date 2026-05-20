@@ -214,48 +214,33 @@ export default function Home() {
     }
   }
 
+  const startEditing = (item: any) => {
+    setEditingId(item.id)
+    setEditFields({ ...item })
+  }
+
   const handleEditChange = (field: string, value: string) => {
     setEditFields((prev: any) => ({ ...prev, [field]: value }))
   }
 
-  const saveItem = async (id: any) => {
-  if (!supabase) return;
-  try {
-    // 모든 필드를 포함하여 한 번에 업데이트
-    const { error } = await supabase
-      .from('requests')
-      .update({
-        // 1. 기본 정보 필드
-        requester: editFields.requester,
-        productName: editFields.productName,
-        lotNo: editFields.lotNo,
-        sampleType: editFields.sampleType,
-        manufacturerSupplier: editFields.manufacturerSupplier,
-        manufactureDate: editFields.manufactureDate,
-        containerQty: editFields.containerQty,
-        totalQty: editFields.totalQty,
-        requestDate: editFields.requestDate,
-        department: editFields.department,
-        remarks: editFields.remarks,
-        sampleQty: editFields.sampleQty,
-        // 2. 결과 정보 필드
-        manager: editFields.manager,
-        judgement: editFields.judgement,
-        judgementDate: editFields.judgementDate,
-        labelQty: editFields.labelQty,
-      })
-      .eq('id', id);
-
-    if (error) throw error;
-
-    await fetchData(); // 데이터 새로고침
-    setEditingId(null); // 수정 모드 종료
-    alert('저장 완료');
-  } catch (error: any) {
-    console.error("저장 실패 원인:", error);
-    alert(`저장 실패: ${error.message}`);
+  const saveEditing = async (id: any) => {
+    if (!supabase) return
+    try {
+      const { error } = await supabase.from('requests').update({
+        requester: editFields.requester, productName: editFields.productName, lotNo: editFields.lotNo,
+        sampleType: editFields.sampleType, manufacturerSupplier: editFields.manufacturerSupplier,
+        manufactureDate: editFields.manufactureDate, containerQty: editFields.containerQty,
+        totalQty: editFields.totalQty, requestDate: editFields.requestDate, department: editFields.department,
+        remarks: editFields.remarks, sampleQty: editFields.sampleQty,
+      }).eq('id', id)
+      if (error) throw error
+      await fetchData()
+      setEditingId(null)
+      alert('수정 완료')
+    } catch (error: any) {
+      alert('수정 실패')
+    }
   }
-};
 
   const getFilteredRequests = () => {
     return requestList.filter((item) => {
@@ -265,17 +250,32 @@ export default function Home() {
     })
   }
 
-// 수정 모드 진입 시 사용하는 단 하나의 startEdit 함수
-const startEdit = (item: any) => {
-  setEditingId(item.id);
-  // 이전 데이터가 있으면 가져오고, 없으면 기본값(오늘날짜, '없음' 등)으로 세팅
-  setEditFields({
-    manager: item.manager || '',
-    judgement: item.judgement || '',
-    judgementDate: item.judgementDate || today, 
-    labelQty: item.labelQty || '없음' 
-  });
-};
+ // 수정 모드 진입
+  const startEdit = (row: any) => {
+    setEditingId(row.id)
+    setEditFields({ ...row })
+  }
+
+  // 데이터 저장 및 읽기 모드 전환
+  const saveItem = async (id: number) => {
+    try {
+      // 데이터베이스 컬럼명에 맞게 키를 수정했습니다.
+      const { error } = await supabase.from('requests').update({
+        manager: editFields.manager,
+        judgement: editFields.judgement,      // editFields.result -> judgement
+        judgementDate: editFields.judgementDate,    // editFields.date -> judgementDate
+        labelQty: editFields.labelQty     // editFields.label_qty -> labelQty
+      }).eq('id', id);
+      
+      if (error) throw error;
+      alert('저장되었습니다.');
+      setEditingId(null);
+      fetchData();
+    } catch (error) {
+      console.error("저장 실패 원인:", error);
+      alert('저장 실패');
+    }
+  }
 
   // [시험결과통보 탭 전용] 삭제 함수 (기존 deleteItem 건드리지 않음)
   const deleteResultItem = async (id: number) => {
@@ -565,9 +565,9 @@ const startEdit = (item: any) => {
                         <td className="border p-2">
                           <div className="flex justify-center gap-1">
                             {isEditing ? (
-                              <><button onClick={() => saveItem(item.id)} className="border bg-blue-600 text-white px-2 py-1 rounded hover:bg-blue-700 text-xs font-semibold">저장</button><button onClick={() => setEditingId(null)} className="border bg-gray-100 text-gray-700 px-2 py-1 rounded hover:bg-gray-200 text-xs">취소</button></>
+                              <><button onClick={() => saveEditing(item.id)} className="border bg-blue-600 text-white px-2 py-1 rounded hover:bg-blue-700 text-xs font-semibold">저장</button><button onClick={() => setEditingId(null)} className="border bg-gray-100 text-gray-700 px-2 py-1 rounded hover:bg-gray-200 text-xs">취소</button></>
                             ) : (
-                              <><button onClick={() => startEdit(item)} className="border bg-gray-50 text-gray-700 px-2 py-1 rounded hover:bg-gray-150 text-xs font-semibold">수정</button><button onClick={() => deleteItem(item.id, startIndex + index)} className="border bg-red-50 text-red-600 px-2 py-1 rounded hover:bg-red-100 text-xs">삭제</button></>
+                              <><button onClick={() => startEditing(item)} className="border bg-gray-50 text-gray-700 px-2 py-1 rounded hover:bg-gray-150 text-xs font-semibold">수정</button><button onClick={() => deleteItem(item.id, startIndex + index)} className="border bg-red-50 text-red-600 px-2 py-1 rounded hover:bg-red-100 text-xs">삭제</button></>
                             )}
                           </div>
                         </td>
@@ -637,10 +637,10 @@ const startEdit = (item: any) => {
                       {/* 🎨 수정사항 3: 담당자 선택 드롭다운 셀 추가 */}
                       {/* 담당자 */}
                       <td className="border p-2">
-                        {isEditing ? (
+                        {isEditing || isEmpty ? (
                       <select
                         className="border p-1 w-full rounded bg-white text-blue-700 font-semibold"
-                        value={editFields.manager ?? item.manager ?? ''}
+                        value={isEditing || isEmpty ? (editFields.manager ?? item.manager ?? '') : (item.manager ?? '')}
                         onChange={(e) => setEditFields((prev: any) => ({ ...prev, manager: e.target.value }))}
                         >
                         <option value="">담당자 선택</option>
@@ -656,10 +656,10 @@ const startEdit = (item: any) => {
                       
                       {/* 판정결과 */}
                       <td className="border p-2">
-                        {isEditing ? (
+                        {isEditing || isEmpty ? (
                       <select 
                         className="border p-1 w-full rounded" 
-                        value={editFields.judgement ?? item.judgement ?? ''}
+                        value={isEditing || isEmpty ? (editFields.judgement ?? item.judgement ?? '') : (item.judgement ?? '')} 
                         onChange={(e) => setEditFields((prev: any) => ({ ...prev, judgement: e.target.value }))}
                         >
                         <option value="">선택</option>
@@ -671,11 +671,11 @@ const startEdit = (item: any) => {
                       
                       {/* 판정일자 */}
                       <td className="border p-2">
-                        {isEditing ? (
+                        {isEditing || isEmpty ? (
                       <input 
                         type="date" 
                         className="border p-1 w-full rounded" 
-                        value={editFields.judgementDate ?? item.judgementDate ?? ''}
+                        value={isEditing || isEmpty ? (editFields.judgementDate ?? item.judgementDate ?? '') : (item.judgementDate ?? '')} 
                         onChange={(e) => setEditFields((prev: any) => ({ ...prev, judgementDate: e.target.value }))} 
                         />
                     ) : (item.judgementDate)}
@@ -683,10 +683,10 @@ const startEdit = (item: any) => {
                       
                       {/* 라벨 발행매수 */}
                       <td className="border p-2">
-                        {isEditing ? (
+                        {isEditing || isEmpty ? (
                       <select 
                         className="border p-1 w-full rounded" 
-                        value={editFields.labelQty ?? item.labelQty ?? '없음'}
+                        value={isEditing || isEmpty ? (editFields.labelQty ?? item.labelQty ?? '없음') : (item.labelQty ?? '없음')} 
                         onChange={(e) => setEditFields((prev: any) => ({ ...prev, labelQty: e.target.value }))}
                         >
                         <option value="없음">없음</option>
@@ -696,7 +696,7 @@ const startEdit = (item: any) => {
                       </td>
                 
                   <td className="border p-2 flex gap-1 justify-center">
-                    {isEditing ? (
+                    {isEditing || isEmpty ? (
                       <button onClick={() => saveItem(item.id)} className="px-2 py-1 bg-green-600 text-white text-xs rounded">저장</button>
                     ) : (
                       <button onClick={() => startEdit(item)} className="px-2 py-1 border border-black text-xs rounded hover:bg-gray-100">수정</button>
