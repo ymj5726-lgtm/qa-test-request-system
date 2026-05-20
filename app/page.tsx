@@ -214,10 +214,16 @@ export default function Home() {
     }
   }
 
-  const startEditing = (item: any) => {
-    setEditingId(item.id)
-    setEditFields({ ...item })
-  }
+  const startEdit = (item: any) => {
+  setEditingId(item.id);
+  // 현재 item의 값을 editFields에 복사하여 입력창에 기본값으로 뜨게 함
+  setEditFields({
+    manager: item.manager || '',
+    judgement: item.judgement || '',
+    judgementDate: item.judgementDate || today, // 오늘 날짜가 기본
+    labelQty: item.labelQty || '없음' // '없음'이 기본
+  });
+};
 
   const handleEditChange = (field: string, value: string) => {
     setEditFields((prev: any) => ({ ...prev, [field]: value }))
@@ -637,10 +643,10 @@ export default function Home() {
                       {/* 🎨 수정사항 3: 담당자 선택 드롭다운 셀 추가 */}
                       {/* 담당자 */}
                       <td className="border p-2">
-                        {isEditing || isEmpty ? (
+                        {isEditing ? (
                       <select
                         className="border p-1 w-full rounded bg-white text-blue-700 font-semibold"
-                        value={isEditing || isEmpty ? (editFields.manager ?? item.manager ?? '') : (item.manager ?? '')}
+                        value={editFields.manager ?? item.manager ?? ''}
                         onChange={(e) => setEditFields((prev: any) => ({ ...prev, manager: e.target.value }))}
                         >
                         <option value="">담당자 선택</option>
@@ -656,10 +662,10 @@ export default function Home() {
                       
                       {/* 판정결과 */}
                       <td className="border p-2">
-                        {isEditing || isEmpty ? (
+                        {isEditing ? (
                       <select 
                         className="border p-1 w-full rounded" 
-                        value={isEditing || isEmpty ? (editFields.judgement ?? item.judgement ?? '') : (item.judgement ?? '')} 
+                        value={editFields.judgement ?? item.judgement ?? ''}
                         onChange={(e) => setEditFields((prev: any) => ({ ...prev, judgement: e.target.value }))}
                         >
                         <option value="">선택</option>
@@ -671,11 +677,11 @@ export default function Home() {
                       
                       {/* 판정일자 */}
                       <td className="border p-2">
-                        {isEditing || isEmpty ? (
+                        {isEditing ? (
                       <input 
                         type="date" 
                         className="border p-1 w-full rounded" 
-                        value={isEditing || isEmpty ? (editFields.judgementDate ?? item.judgementDate ?? '') : (item.judgementDate ?? '')} 
+                        value={editFields.judgementDate ?? item.judgementDate ?? ''}
                         onChange={(e) => setEditFields((prev: any) => ({ ...prev, judgementDate: e.target.value }))} 
                         />
                     ) : (item.judgementDate)}
@@ -683,10 +689,10 @@ export default function Home() {
                       
                       {/* 라벨 발행매수 */}
                       <td className="border p-2">
-                        {isEditing || isEmpty ? (
+                        {isEditing ? (
                       <select 
                         className="border p-1 w-full rounded" 
-                        value={isEditing || isEmpty ? (editFields.labelQty ?? item.labelQty ?? '없음') : (item.labelQty ?? '없음')} 
+                        value={editFields.labelQty ?? item.labelQty ?? '없음'}
                         onChange={(e) => setEditFields((prev: any) => ({ ...prev, labelQty: e.target.value }))}
                         >
                         <option value="없음">없음</option>
@@ -696,7 +702,7 @@ export default function Home() {
                       </td>
                 
                   <td className="border p-2 flex gap-1 justify-center">
-                    {isEditing || isEmpty ? (
+                    {isEditing ? (
                       <button onClick={() => saveItem(item.id)} className="px-2 py-1 bg-green-600 text-white text-xs rounded">저장</button>
                     ) : (
                       <button onClick={() => startEdit(item)} className="px-2 py-1 border border-black text-xs rounded hover:bg-gray-100">수정</button>
