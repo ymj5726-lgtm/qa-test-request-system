@@ -307,8 +307,8 @@ export default function Home() {
               {/* 1행: 품명 / 시험항목 종류 */}
               <tr>
                 <th className="border border-black bg-gray-50 p-3 w-1/6 font-semibold text-center">품명</th>
-                <td className="border border-black p-2 w-2/6 bg-white/80">
-                  <select className="border p-2 w-full rounded bg-white" value={productName} onChange={(e) => setProductName(e.target.value)}>
+                <td className="border border-black p-0 w-2/6 bg-white/80">
+                  <select className="w-full h-full p-2 border-none outline-none bg-white whitespace-nowrap" value={productName} onChange={(e) => setProductName(e.target.value)}>
                     <option value="O0330">O0330</option>
                     <option value="O0711">O0711</option>
                     <option value="O0731">O0731</option>
@@ -334,8 +334,8 @@ export default function Home() {
                   </select>
                 </td>
                 <th className="border border-black bg-gray-50 p-3 w-1/6 font-semibold text-center">시험항목 종류</th>
-                <td className="border border-black p-2 w-2/6 bg-white/80">
-                  <select className="border p-2 w-full rounded bg-white" value={sampleType} onChange={(e) => setSampleType(e.target.value)}>
+                <td className="border border-black p-0 w-2/6 bg-white/80">
+                  <select className="w-full h-full p-2 border-none outline-none bg-white whitespace-nowrap" value={sampleType} onChange={(e) => setSampleType(e.target.value)}>
                     <option value="액체원료">액체원료</option>
                     <option value="고체원료">고체원료</option>
                     <option value="중간체">중간체</option>
@@ -347,11 +347,11 @@ export default function Home() {
               {/* 2행: 제조번호 / 제조자 및 납품자 */}
               <tr>
                 <th className="border border-black bg-gray-50 p-3 font-semibold text-center">제조번호 (Lot No.)</th>
-                <td className="border border-black p-2 bg-white/80">
-                  <input className="border p-2 w-full rounded" placeholder="제조번호 입력" value={lotNo} onChange={(e) => setLotNo(e.target.value)} />
+                <td className="border border-black p-0 w-2/6 bg-white/80">
+                  <select className="w-full h-full p-2 border-none outline-none bg-white whitespace-nowrap" placeholder="제조번호 입력" value={lotNo} onChange={(e) => setLotNo(e.target.value)} />
                 </td>
                 <th className="border border-black bg-gray-50 p-3 font-semibold text-center">제조자 / 납품자</th>
-                <td className="border border-black p-2 bg-white/80">
+                <td className="border border-black p-0 bg-white/80">
                   {!isCustomManufacturer ? (
                     <select
                       className="border p-2 w-full rounded bg-white"
@@ -370,7 +370,7 @@ export default function Home() {
                     </select>
                   ) : (
                     <div className="flex gap-2">
-                      <input className="border p-2 w-full rounded" placeholder="직접 입력" value={manufacturerSupplier} onChange={(e) => setManufacturerSupplier(e.target.value)} />
+                      <input className="w-full h-full p-2 border-none outline-none bg-white whitespace-nowrap" placeholder="직접 입력" value={manufacturerSupplier} onChange={(e) => setManufacturerSupplier(e.target.value)} />
                       <button type="button" onClick={() => { setIsCustomManufacturer(false); setManufacturerSupplier('(주)파마코스텍'); }} className="border px-3 py-1 bg-gray-100 rounded text-xs whitespace-nowrap">목록</button>
                     </div>
                   )}
@@ -380,34 +380,34 @@ export default function Home() {
               {/* 3행: 용기 수량 / 제조일자 */}
               <tr>
                 <th className="border border-black bg-gray-50 p-3 font-semibold text-center">용기 수량</th>
-                <td className="border border-black p-2 bg-white/80">
-                  <input className="border p-2 w-full rounded" placeholder="예: 10 Can, 5 Drum" value={containerQty} onChange={(e) => setContainerQty(e.target.value)} />
+               <td className="border border-black p-0 w-2/6 bg-white/80">
+                  <select className="w-full h-full p-2 border-none outline-none bg-white whitespace-nowrap" placeholder="예: 10 Can, 5 Drum" value={containerQty} onChange={(e) => setContainerQty(e.target.value)} />
                 </td>
                 <th className="border border-black bg-gray-50 p-3 font-semibold text-center">제조 / 입고 일자</th>
-                <td className="border border-black p-2 bg-white/80">
-                  <input type="date" className="border p-2 w-full rounded" value={manufactureDate} onChange={(e) => setManufactureDate(e.target.value)} />
+               <td className="border border-black p-0 w-2/6 bg-white/80">
+                  <select className="w-full h-full p-2 border-none outline-none bg-white whitespace-nowrap" value={manufactureDate} onChange={(e) => setManufactureDate(e.target.value)} />
                 </td>
               </tr>
 
               {/* 4행: 입고 수량 / 의뢰일 */}
               <tr>
                 <th className="border border-black bg-gray-50 p-3 font-semibold text-center">제조 / 입고 수량</th>
-                <td className="border border-black p-2 bg-white/80">
-                  <input className="border p-2 w-full rounded" placeholder="예: 200kg, 1,000L" value={totalQty} onChange={(e) => setTotalQty(e.target.value)} />
+                <td className="border border-black p-0 w-2/6 bg-white/80">
+                  <select className="w-full h-full p-2 border-none outline-none bg-white whitespace-nowrap" placeholder="예: 200kg, 1,000L" value={totalQty} onChange={(e) => setTotalQty(e.target.value)} />
                 </td>
                 <th className="border border-black bg-gray-50 p-3 font-semibold text-center">의뢰일</th>
-                <td className="border border-black p-2 bg-white/80">
-                  <input type="date" className="border p-2 w-full rounded" value={requestDate} onChange={(e) => setRequestDate(e.target.value)} />
+              <td className="border border-black p-0 w-2/6 bg-white/80">
+                  <select className="w-full h-full p-2 border-none outline-none bg-white whitespace-nowrap" value={requestDate} onChange={(e) => setRequestDate(e.target.value)} />
                 </td>
               </tr>
 
               {/* 5행: 채취량 / 의뢰부서 */}
               <tr>
                 <th className="border border-black bg-gray-50 p-3 font-semibold text-center">채취량</th>
-                <td className="border border-black p-2 bg-white/80">
+                <td className="border border-black p-0 bg-white/80">
                   {!isCustomSampleQty ? (
                     <select
-                      className="border p-2 w-full rounded bg-white"
+                      className="w-full h-full p-2 border-none outline-none bg-white whitespace-nowrap"
                       value={sampleQty}
                       onChange={(e) => {
                         if (e.target.value === 'custom_qty_write') {
@@ -422,14 +422,14 @@ export default function Home() {
                     </select>
                   ) : (
                     <div className="flex gap-2">
-                      <input className="border p-2 w-full rounded" placeholder="예: 5g, 10g" value={sampleQty} onChange={(e) => setSampleQty(e.target.value)} />
+                      <input className="w-full h-full p-2 border-none outline-none bg-white whitespace-nowrap" placeholder="예: 5g, 10g" value={sampleQty} onChange={(e) => setSampleQty(e.target.value)} />
                       <button type="button" onClick={() => { setIsCustomSampleQty(false); setSampleQty('2g'); }} className="border px-3 py-1 bg-gray-100 rounded text-xs whitespace-nowrap">목록</button>
                     </div>
                   )}
                 </td>
                 <th className="border border-black bg-gray-50 p-3 font-semibold text-center">의뢰부서</th>
-                <td className="border border-black p-2 bg-white/80">
-                  <select className="border p-2 w-full rounded bg-white" value={department} onChange={(e) => setDepartment(e.target.value)}>
+                <td className="border border-black p-0 w-2/6 bg-white/80">
+                  <select className="w-full h-full p-2 border-none outline-none bg-white whitespace-nowrap" value={department} onChange={(e) => setDepartment(e.target.value)}>
                     <option value="음성공장 합성팀">음성공장 합성팀</option>
                     <option value="음성공장 품질팀">음성공장 품질팀</option>
                     <option value="화성공장">화성공장</option>
@@ -440,18 +440,24 @@ export default function Home() {
               {/* 6행: 의뢰자(채취자) / 빈칸 */}
               <tr>
                 <th className="border border-black bg-gray-50 p-3 font-semibold text-center">의뢰자 (채취자)</th>
-                <td className="border border-black p-2 bg-white/80">
-                  <input className="border p-2 w-full rounded" placeholder="이름 입력" value={requester} onChange={(e) => setRequester(e.target.value)} />
+                <td className="border border-black p-0 w-2/6 bg-white/80">
+                  <select className="w-full h-full p-2 border-none outline-none bg-white whitespace-nowrap" placeholder="이름 입력" value={requester} onChange={(e) => setRequester(e.target.value)} />
                 </td>
                 <th className="border border-black bg-gray-50 p-3 font-semibold text-center"></th>
-                <td className="border border-black p-2 bg-gray-100"></td>
+                {/* 여기에 대각선 빗금 추가 */}
+                <td 
+                  className="border border-black p-0 bg-white" 
+                  style={{ 
+                    backgroundImage: 'linear-gradient(to top right, transparent calc(50% - 0.5px), black, transparent calc(50% + 0.5px))' 
+                  }}
+                ></td>
               </tr>
 
               {/* 7행: 비고 */}
               <tr>
                 <th className="border border-black bg-gray-50 p-3 font-semibold text-center">비고</th>
-                <td colSpan={3} className="border border-black p-2 bg-white/80">
-                  <input className="border p-2 w-full rounded" placeholder="비고 입력" value={remarks} onChange={(e) => setRemarks(e.target.value)} />
+                <td colSpan={3} className="border border-black p-0 bg-white/80">
+                  <input className="w-full h-full p-2 border-none outline-none bg-white whitespace-nowrap" placeholder="비고 입력" value={remarks} onChange={(e) => setRemarks(e.target.value)} />
                 </td>
               </tr>
             </tbody>
