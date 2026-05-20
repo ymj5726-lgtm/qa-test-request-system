@@ -306,8 +306,8 @@ export default function Home() {
             <tbody>
               {/* 1행: 품명 / 시험항목 종류 */}
               <tr>
-                <th className="border border-black bg-gray-50 p-3 w-1/6 font-semibold text-center">품명</th>
-                <td className="border border-black p-2 w-2/6 bg-white/80">
+                <th className="border border-black bg-gray-50 p-3 w-1/3 font-semibold text-center">품명</th>
+                <td className="border border-black p-2 w-2/3 bg-white/80">
                   <select className="border p-2 w-full rounded bg-white" value={productName} onChange={(e) => setProductName(e.target.value)}>
                     <option value="O0330">O0330</option>
                     <option value="O0711">O0711</option>
@@ -333,8 +333,8 @@ export default function Home() {
                     <option value="EDC">EDC</option>
                   </select>
                 </td>
-                <th className="border border-black bg-gray-50 p-3 w-1/6 font-semibold text-center">시험항목 종류</th>
-                <td className="border border-black p-2 w-2/6 bg-white/80">
+                <th className="border border-black bg-gray-50 p-3 w-1/3 font-semibold text-center">시험항목 종류</th>
+                <td className="border border-black p-2 w-2/3 bg-white/80">
                   <select className="border p-2 w-full rounded bg-white" value={sampleType} onChange={(e) => setSampleType(e.target.value)}>
                     <option value="액체원료">액체원료</option>
                     <option value="고체원료">고체원료</option>
@@ -439,7 +439,7 @@ export default function Home() {
 
               {/* 6행: 의뢰자(채취자) / 빈칸 */}
               <tr>
-                <th className="border border-black bg-gray-50 p-3 font-semibold text-center">의뢰자 (채취자)</th>
+                <th className="border border-black bg-gray-50 p-3 font-semibold text-center">의뢰자</th>
                 <td className="border border-black p-2 bg-white/80">
                   <input className="border p-2 w-full rounded" placeholder="이름 입력" value={requester} onChange={(e) => setRequester(e.target.value)} />
                 </td>
@@ -449,7 +449,7 @@ export default function Home() {
 
               {/* 7행: 비고 */}
               <tr>
-                <th className="border border-black bg-gray-50 p-3 font-semibold text-center">비고</th>
+                <th className="border border-black bg-gray-50 p-3 font-semibold text-center">비고(참고사항)</th>
                 <td colSpan={3} className="border border-black p-2 bg-white/80">
                   <input className="border p-2 w-full rounded" placeholder="비고 입력" value={remarks} onChange={(e) => setRemarks(e.target.value)} />
                 </td>
