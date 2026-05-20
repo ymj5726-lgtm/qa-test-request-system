@@ -219,24 +219,6 @@ export default function Home() {
   }
 
   const saveItem = async (id: any) => {
-    if (!supabase) return
-    try {
-      const { error } = await supabase.from('requests').update({
-        requester: editFields.requester, productName: editFields.productName, lotNo: editFields.lotNo,
-        sampleType: editFields.sampleType, manufacturerSupplier: editFields.manufacturerSupplier,
-        manufactureDate: editFields.manufactureDate, containerQty: editFields.containerQty,
-        totalQty: editFields.totalQty, requestDate: editFields.requestDate, department: editFields.department,
-        remarks: editFields.remarks, sampleQty: editFields.sampleQty,
-      }).eq('id', id)
-      if (error) throw error
-      await fetchData()
-      setEditingId(null)
-      alert('수정 완료')
-    } catch (error: any) {
-      alert('수정 실패')
-    }
-  }
-  const saveItem = async (id: any) => {
   if (!supabase) return;
   try {
     // 모든 필드를 포함하여 한 번에 업데이트
