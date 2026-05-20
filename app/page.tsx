@@ -236,6 +236,43 @@ export default function Home() {
     })
   }
 
+ // 수정 모드 진입
+  const startEdit = (row: any) => {
+    setEditingId(row.id)
+    setEditFields({ ...row })
+  }
+
+  // 데이터 저장 및 읽기 모드 전환
+  const saveItem = async (id: number) => {
+    try {
+      const { error } = await supabase.from('result').update({
+        manager: editFields.manager,
+        result: editFields.result,
+        date: editFields.date,
+        label_qty: editFields.label_qty
+      }).eq('id', id)
+      
+      if (error) throw error
+      alert('저장되었습니다.')
+      setEditingId(null)
+      fetchData()
+    } catch (error) {
+      alert('저장 실패')
+    }
+  }
+
+  // [시험결과통보 탭 전용] 삭제 함수 (기존 deleteItem 건드리지 않음)
+  const deleteResultItem = async (id: number) => {
+    if (!window.confirm('선택한 의뢰를 삭제하시겠습니까?')) return
+    try {
+      const { error } = await supabase.from('result').delete().eq('id', id)
+      if (error) throw error
+      fetchData()
+    } catch (error) {
+      alert('삭제 실패')
+    }
+  }
+  
   const downloadExcel = () => {
     const filteredData = getFilteredRequests();
     const headers = ["No", "시험항목", "의뢰자", "의뢰일", "의뢰번호", "성적번호", "품명", "제조번호", "제조자/납품자", "채취량", "제조/입고 일자", "용기수량", "입고수량", "의뢰부서", "비고"];
@@ -560,10 +597,15 @@ export default function Home() {
                 <th className="border p-2">판정결과</th>
                 <th className="border p-2">판정일자</th>
                 <th className="border p-2">라벨 발행매수</th>
-                <th className="border p-2">삭제</th>
+                <th className="border p-2">관리</th>
               </tr>
             </thead>
             <tbody>
+               {results.map((r, index) => {
+                // 데이터가 비어있으면(처음 생성이면) 무조건 편집모드처럼 보이게 처리
+                const isNew = !r.manager || r.manager === '담당자 선택'
+                const isEditing = editingId === r.id || isNew
+
               {(() => {
                 const filtered = getFilteredRequests()
                 const startIndex = (resultPage - 1) * itemsPerPage
@@ -606,9 +648,15 @@ export default function Home() {
                           {Array.from({ length: 500 }, (_, i) => (<option key={i + 1} value={String(i + 1)}>{i + 1}매</option>))}
                         </select>
                       </td>
-                      <td className="border p-2">
-                        <button onClick={() => deleteItem(item.id, startIndex + index)} className="border bg-red-50 text-red-600 px-2 py-1 rounded hover:bg-red-100">삭제</button>
-                      </td>
+                       <td className="border border-black p-2 flex gap-1 justify-center">
+                      {editingId === r.id || isNew ? (
+                        <button onClick={() => saveItem(r.id)} className="px-2 py-1 bg-green-600 text-white text-xs">저장</button>
+                      ) : (
+                        <button onClick={() => startEdit(r)} className="px-2 py-1 border border-black text-xs hover:bg-gray-100">수정</button>
+                      )}
+                      {/* 새 함수 적용 */}
+                      <button onClick={() => deleteResultItem(r.id)} className="px-2 py-1 border border-red-500 text-red-500 text-xs hover:bg-red-50">삭제</button>
+                    </td>
                     </tr>
                   ))
                 ) : (<tr><td colSpan={9} className="border p-8 text-gray-500">데이터가 존재하지 않습니다.</td></tr>)
