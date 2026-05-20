@@ -566,9 +566,9 @@ const startEdit = (item: any) => {
                         <td className="border p-2">
                           <div className="flex justify-center gap-1">
                             {isEditing ? (
-                              <><button onClick={() => saveEditing(item.id)} className="border bg-blue-600 text-white px-2 py-1 rounded hover:bg-blue-700 text-xs font-semibold">저장</button><button onClick={() => setEditingId(null)} className="border bg-gray-100 text-gray-700 px-2 py-1 rounded hover:bg-gray-200 text-xs">취소</button></>
+                              <><button onClick={() => saveEdit(item.id)} className="border bg-blue-600 text-white px-2 py-1 rounded hover:bg-blue-700 text-xs font-semibold">저장</button><button onClick={() => setEditingId(null)} className="border bg-gray-100 text-gray-700 px-2 py-1 rounded hover:bg-gray-200 text-xs">취소</button></>
                             ) : (
-                              <><button onClick={() => startEditing(item)} className="border bg-gray-50 text-gray-700 px-2 py-1 rounded hover:bg-gray-150 text-xs font-semibold">수정</button><button onClick={() => deleteItem(item.id, startIndex + index)} className="border bg-red-50 text-red-600 px-2 py-1 rounded hover:bg-red-100 text-xs">삭제</button></>
+                              <><button onClick={() => startEdit(item)} className="border bg-gray-50 text-gray-700 px-2 py-1 rounded hover:bg-gray-150 text-xs font-semibold">수정</button><button onClick={() => deleteItem(item.id, startIndex + index)} className="border bg-red-50 text-red-600 px-2 py-1 rounded hover:bg-red-100 text-xs">삭제</button></>
                             )}
                           </div>
                         </td>
