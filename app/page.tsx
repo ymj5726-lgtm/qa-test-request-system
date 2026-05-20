@@ -243,25 +243,37 @@ export default function Home() {
   }
 
   // 데이터 저장 및 읽기 모드 전환
-  const saveItem = async (id: number) => {
+ const saveItem = async (id: number) => {
     try {
-      // 데이터베이스 컬럼명에 맞게 키를 수정했습니다.
+      // 1. 전송 데이터 로그 출력
+      console.log("전송할 데이터:", {
+        manager: editFields.manager,
+        judgement: editFields.judgement,
+        judgementDate: editFields.judgementDate,
+        labelQty: editFields.labelQty
+      });
+
       const { error } = await supabase.from('result').update({
         manager: editFields.manager,
-        judgement: editFields.judgement,      // editFields.result -> judgement
-        judgementDate: editFields.judgementDate,    // editFields.date -> judgementDate
-        labelQty: editFields.labelQty     // editFields.label_qty -> labelQty
+        judgement: editFields.judgement,
+        judgementDate: editFields.judgementDate,
+        labelQty: editFields.labelQty
       }).eq('id', id);
       
-      if (error) throw error;
+      if (error) {
+        // 2. 에러가 발생하면 상세 정보를 콘솔에 찍습니다
+        console.error("Supabase 상세 에러:", error);
+        throw error;
+      }
+
       alert('저장되었습니다.');
       setEditingId(null);
       fetchData();
     } catch (error) {
       console.error("저장 실패 원인:", error);
-      alert('저장 실패');
+      alert('저장 실패: ' + (error?.message || '알 수 없는 오류'));
     }
-  }
+  };
 
   // [시험결과통보 탭 전용] 삭제 함수 (기존 deleteItem 건드리지 않음)
   const deleteResultItem = async (id: number) => {
