@@ -127,52 +127,66 @@ export default function Home() {
   }
 
   const saveData = async () => {
-    if (!supabase) return alert('데이터베이스 준비 안됨')
-    try {
-      const { data: latestData, error: fetchError } = await supabase.from('requests').select('*').order('created_at', { ascending: true })
-      if (fetchError) throw fetchError
-      
-      const currentList = latestData || []
-      setRequestList(currentList)
+  if (!supabase) return alert('데이터베이스 준비 안됨')
+  try {
+    // 1. 데이터 가져오기 (ID 생성용)
+    const { data: latestData, error: fetchError } = await supabase.from('requests').select('*').order('created_at', { ascending: true })
+    if (fetchError) throw fetchError
+    
+    const currentList = latestData || []
+    setRequestList(currentList)
 
-      const autoRequestNo = generateRequestNo(sampleType, requestDate, currentList)
-      const autoReportNo = `Q${autoRequestNo}`
+    const autoRequestNo = generateRequestNo(sampleType, requestDate, currentList)
+    const autoReportNo = `Q${autoRequestNo}`
 
-      const newItem = {
-        requester: requester || '',
-        productName: productName || 'O0330',
-        lotNo: lotNo || '',
-        sampleType: sampleType || '액체원료',
-        manufacturerSupplier: manufacturerSupplier || '',
-        manufactureDate: manufactureDate || today,
-        containerQty: containerQty || '',
-        totalQty: totalQty || '',
-        requestDate: requestDate || today,
-        department: department || '음성공장 합성팀',
-        remarks: remarks || '',
-        judgementDate: judgementDate || today,
-        judgement: judgement || '',
-        labelQty: labelQty || '없음',
-        requestNo: autoRequestNo,
-        reportNo: autoReportNo,
-        sampleQty: sampleQty || '',
-      }
-
-      const { error: insertError } = await supabase.from('requests').insert([newItem])
-      if (insertError) throw insertError
-
-      await fetchData()
-      alert(`저장 완료\n의뢰번호: ${autoRequestNo}\n성적번호: ${autoReportNo}`)
-      
-      // 폼 리셋
-      setRequester(''); setProductName('O0330'); setLotNo(''); setSampleType('액체원료');
-      setManufacturerSupplier('(주)파마코스텍'); setIsCustomManufacturer(false);
-      setContainerQty(''); setTotalQty(''); setRemarks('');
-      setSampleQty('2g'); setIsCustomSampleQty(false);
-    } catch (error: any) {
-      alert(`저장 실패: ${error.message}`)
+    const newItem = {
+      requester: requester || '',
+      productName: productName || 'O0330',
+      lotNo: lotNo || '',
+      sampleType: sampleType || '액체원료',
+      manufacturerSupplier: manufacturerSupplier || '',
+      manufactureDate: manufactureDate || today,
+      containerQty: containerQty || '',
+      totalQty: totalQty || '',
+      requestDate: requestDate || today,
+      department: department || '음성공장 합성팀',
+      remarks: remarks || '',
+      judgementDate: judgementDate || today,
+      judgement: judgement || '',
+      labelQty: labelQty || '없음',
+      requestNo: autoRequestNo,
+      reportNo: autoReportNo,
+      sampleQty: sampleQty || '',
     }
+
+    // 2. 데이터 저장
+    const { error: insertError } = await supabase.from('requests').insert([newItem])
+    if (insertError) throw insertError
+
+    // 3. 리스트 새로고침
+    await fetchData()
+
+    // 4. [추가] 마지막 페이지 계산 및 이동
+    // 현재 총 데이터 개수를 조회 (정확한 페이지 계산을 위해)
+    const { count } = await supabase.from('requests').select('*', { count: 'exact', head: true })
+    const itemsPerPage = 15 // 기존 페이지네이션 설정값 (15개)
+    const lastPage = Math.ceil((count || 0) / itemsPerPage)
+
+    // 페이지 상태와 탭 상태 업데이트
+    setResultPage(lastPage)
+    setActiveTab('result') // '시험결과통보' 탭으로 자동 전환
+
+    alert(`저장 완료\n의뢰번호: ${autoRequestNo}\n성적번호: ${autoReportNo}`)
+    
+    // 폼 리셋
+    setRequester(''); setProductName('O0330'); setLotNo(''); setSampleType('액체원료');
+    setManufacturerSupplier('(주)파마코스텍'); setIsCustomManufacturer(false);
+    setContainerQty(''); setTotalQty(''); setRemarks('');
+    setSampleQty('2g'); setIsCustomSampleQty(false);
+  } catch (error: any) {
+    alert(`저장 실패: ${error.message}`)
   }
+}
 
   const deleteItem = async (id: any, index: number) => {
     if (!supabase) return
