@@ -622,64 +622,64 @@ export default function Home() {
                       
                       {/* 🎨 수정사항 3: 담당자 선택 드롭다운 셀 추가 */}
                       {/* 담당자 */}
-<td className="border p-2">
-  {isEditing || isEmpty ? (
-    <select
-      className="border p-1 w-full rounded bg-white text-blue-700 font-semibold"
-      value={isEditing || isEmpty ? (editFields.manager ?? item.manager ?? '') : (item.manager ?? '')}
-      onChange={(e) => setEditFields(prev => ({ ...prev, manager: e.target.value }))}
-    >
-      <option value="">담당자 선택</option>
-      <option value="김정현">김정현</option>
-      <option value="김현서">김현서</option>
-      <option value="신정수">신정수</option>
-      <option value="이지우">이지우</option>
-    </select>
-  ) : (
-    <span className="font-semibold text-blue-700">{item.manager}</span>
-  )}
-</td>
-
-{/* 판정결과 */}
-<td className="border p-2">
-  {isEditing || isEmpty ? (
-    <select 
-      className="border p-1 w-full rounded" 
-      value={isEditing || isEmpty ? (editFields.judgement ?? item.judgement ?? '') : (item.judgement ?? '')} 
-      onChange={(e) => setEditFields(prev => ({ ...prev, judgement: e.target.value }))}
-    >
-      <option value="">선택</option>
-      <option value="적합">적합</option>
-      <option value="부적합">부적합</option>
-    </select>
-  ) : (item.judgement)}
-</td>
-
-{/* 판정일자 */}
-<td className="border p-2">
-  {isEditing || isEmpty ? (
-    <input 
-      type="date" 
-      className="border p-1 w-full rounded" 
-      value={isEditing || isEmpty ? (editFields.judgementDate ?? item.judgementDate ?? '') : (item.judgementDate ?? '')} 
-      onChange={(e) => setEditFields(prev => ({ ...prev, judgementDate: e.target.value }))} 
-    />
-  ) : (item.judgementDate)}
-</td>
-
-{/* 라벨 발행매수 */}
-<td className="border p-2">
-  {isEditing || isEmpty ? (
-    <select 
-      className="border p-1 w-full rounded" 
-      value={isEditing || isEmpty ? (editFields.labelQty ?? item.labelQty ?? '없음') : (item.labelQty ?? '없음')} 
-      onChange={(e) => setEditFields(prev => ({ ...prev, labelQty: e.target.value }))}
-    >
-      <option value="없음">없음</option>
-      {Array.from({ length: 500 }, (_, i) => (<option key={i + 1} value={String(i + 1)}>{i + 1}매</option>))}
-    </select>
-  ) : (item.labelQty)}
-</td>
+                      <td className="border p-2">
+                        {isEditing || isEmpty ? (
+                      <select
+                        className="border p-1 w-full rounded bg-white text-blue-700 font-semibold"
+                        value={isEditing || isEmpty ? (editFields.manager ?? item.manager ?? '') : (item.manager ?? '')}
+                        onChange={(e) => setEditFields((prev: any) => ({ ...prev, manager: e.target.value }))}
+                        >
+                        <option value="">담당자 선택</option>
+                        <option value="김정현">김정현</option>
+                        <option value="김현서">김현서</option>
+                        <option value="신정수">신정수</option>
+                        <option value="이지우">이지우</option>
+                      </select>
+                    ) : (
+                      <span className="font-semibold text-blue-700">{item.manager}</span>
+                    )}
+                      </td>
+                      
+                      {/* 판정결과 */}
+                      <td className="border p-2">
+                        {isEditing || isEmpty ? (
+                      <select 
+                        className="border p-1 w-full rounded" 
+                        value={isEditing || isEmpty ? (editFields.judgement ?? item.judgement ?? '') : (item.judgement ?? '')} 
+                        onChange={(e) => setEditFields((prev: any) => ({ ...prev, judgement: e.target.value }))}
+                        >
+                        <option value="">선택</option>
+                        <option value="적합">적합</option>
+                        <option value="부적합">부적합</option>
+                      </select>
+                    ) : (item.judgement)}
+                      </td>
+                      
+                      {/* 판정일자 */}
+                      <td className="border p-2">
+                        {isEditing || isEmpty ? (
+                      <input 
+                        type="date" 
+                        className="border p-1 w-full rounded" 
+                        value={isEditing || isEmpty ? (editFields.judgementDate ?? item.judgementDate ?? '') : (item.judgementDate ?? '')} 
+                        onChange={(e) => setEditFields((prev: any) => ({ ...prev, judgementDate: e.target.value }))} 
+                        />
+                    ) : (item.judgementDate)}
+                      </td>
+                      
+                      {/* 라벨 발행매수 */}
+                      <td className="border p-2">
+                        {isEditing || isEmpty ? (
+                      <select 
+                        className="border p-1 w-full rounded" 
+                        value={isEditing || isEmpty ? (editFields.labelQty ?? item.labelQty ?? '없음') : (item.labelQty ?? '없음')} 
+                        onChange={(e) => setEditFields((prev: any) => ({ ...prev, labelQty: e.target.value }))}
+                        >
+                        <option value="없음">없음</option>
+                        {Array.from({ length: 500 }, (_, i) => (<option key={i + 1} value={String(i + 1)}>{i + 1}매</option>))}
+                      </select>
+                    ) : (item.labelQty)}
+                      </td>
                 
                   <td className="border p-2 flex gap-1 justify-center">
                     {isEditing || isEmpty ? (
