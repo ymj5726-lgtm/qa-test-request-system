@@ -348,7 +348,7 @@ export default function Home() {
               <tr>
                 <th className="border border-black bg-gray-50 p-3 font-semibold text-center">제조번호 (Lot No.)</th>
                 <td className="border border-black p-0 w-2/6 bg-white/80">
-                  <select className="w-full h-full p-2 border-none outline-none bg-white whitespace-nowrap" placeholder="제조번호 입력" value={lotNo} onChange={(e) => setLotNo(e.target.value)} />
+                  <input className="w-full h-full p-2 border-none outline-none bg-white whitespace-nowrap" placeholder="제조번호 입력" value={lotNo} onChange={(e) => setLotNo(e.target.value)} />
                 </td>
                 <th className="border border-black bg-gray-50 p-3 font-semibold text-center">제조자 / 납품자</th>
                 <td className="border border-black p-0 bg-white/80">
@@ -381,7 +381,7 @@ export default function Home() {
               <tr>
                 <th className="border border-black bg-gray-50 p-3 font-semibold text-center">용기 수량</th>
                <td className="border border-black p-0 w-2/6 bg-white/80">
-                  <select className="w-full h-full p-2 border-none outline-none bg-white whitespace-nowrap" placeholder="예: 10 Can, 5 Drum" value={containerQty} onChange={(e) => setContainerQty(e.target.value)} />
+                  <input className="w-full h-full p-2 border-none outline-none bg-white whitespace-nowrap" placeholder="예: 10 Box, 5 D/M" value={containerQty} onChange={(e) => setContainerQty(e.target.value)} />
                 </td>
                 <th className="border border-black bg-gray-50 p-3 font-semibold text-center">제조 / 입고 일자</th>
                <td className="border border-black p-0 w-2/6 bg-white/80">
@@ -393,7 +393,7 @@ export default function Home() {
               <tr>
                 <th className="border border-black bg-gray-50 p-3 font-semibold text-center">제조 / 입고 수량</th>
                 <td className="border border-black p-0 w-2/6 bg-white/80">
-                  <select className="w-full h-full p-2 border-none outline-none bg-white whitespace-nowrap" placeholder="예: 200kg, 1,000L" value={totalQty} onChange={(e) => setTotalQty(e.target.value)} />
+                  <input className="w-full h-full p-2 border-none outline-none bg-white whitespace-nowrap" placeholder="예: 40,000g, 200kg" value={totalQty} onChange={(e) => setTotalQty(e.target.value)} />
                 </td>
                 <th className="border border-black bg-gray-50 p-3 font-semibold text-center">의뢰일</th>
               <td className="border border-black p-0 w-2/6 bg-white/80">
@@ -441,7 +441,7 @@ export default function Home() {
               <tr>
                 <th className="border border-black bg-gray-50 p-3 font-semibold text-center">의뢰자 (채취자)</th>
                 <td className="border border-black p-0 w-2/6 bg-white/80">
-                  <select className="w-full h-full p-2 border-none outline-none bg-white whitespace-nowrap" placeholder="이름 입력" value={requester} onChange={(e) => setRequester(e.target.value)} />
+                  <input className="w-full h-full p-2 border-none outline-none bg-white whitespace-nowrap" placeholder="이름 입력" value={requester} onChange={(e) => setRequester(e.target.value)} />
                 </td>
                 <th className="border border-black bg-gray-50 p-3 font-semibold text-center"></th>
                 {/* 여기에 대각선 빗금 추가 */}
@@ -457,7 +457,7 @@ export default function Home() {
               <tr>
                 <th className="border border-black bg-gray-50 p-3 font-semibold text-center">비고</th>
                 <td colSpan={3} className="border border-black p-0 bg-white/80">
-                  <input className="w-full h-full p-2 border-none outline-none bg-white whitespace-nowrap" placeholder="비고 입력" value={remarks} onChange={(e) => setRemarks(e.target.value)} />
+                  <input className="w-full h-full p-2 border-none outline-none bg-white whitespace-nowrap" placeholder="비고(참고사항) 입력" value={remarks} onChange={(e) => setRemarks(e.target.value)} />
                 </td>
               </tr>
             </tbody>
