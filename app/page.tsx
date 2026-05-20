@@ -306,7 +306,7 @@ export default function Home() {
             <tbody>
               {/* 1행: 품명 / 시험항목 종류 */}
               <tr>
-                <th className="border border-black bg-gray-50 p-3 w-1/6 font-semibold text-center">품명</th>
+                <th className="border border-black bg-gray-50 p-3 w-1/6 font-semibold text-center whitespace-normal leading-tight">품명</th>
                 <td className="border border-black p-2 w-2/6 bg-white/80">
                   <select className="border p-2 w-full rounded bg-white" value={productName} onChange={(e) => setProductName(e.target.value)}>
                     <option value="O0330">O0330</option>
@@ -333,7 +333,7 @@ export default function Home() {
                     <option value="EDC">EDC</option>
                   </select>
                 </td>
-                <th className="border border-black bg-gray-50 p-3 w-1/6 font-semibold text-center">시험항목 종류</th>
+                <th className="border border-black bg-gray-50 p-3 w-1/6 font-semibold text-center whitespace-normal leading-tight">시험항목<br />종류</th>
                 <td className="border border-black p-2 w-2/6 bg-white/80">
                   <select className="border p-2 w-full rounded bg-white" value={sampleType} onChange={(e) => setSampleType(e.target.value)}>
                     <option value="액체원료">액체원료</option>
@@ -346,11 +346,11 @@ export default function Home() {
               
               {/* 2행: 제조번호 / 제조자 및 납품자 */}
               <tr>
-                <th className="border border-black bg-gray-50 p-3 font-semibold text-center">제조번호 (Lot No.)</th>
+                <th className="border border-black bg-gray-50 p-3 font-semibold text-center whitespace-normal leading-tight">제조번호<br />(Lot No.)</th>
                 <td className="border border-black p-2 bg-white/80">
                   <input className="border p-2 w-full rounded" placeholder="제조번호 입력" value={lotNo} onChange={(e) => setLotNo(e.target.value)} />
                 </td>
-                <th className="border border-black bg-gray-50 p-3 font-semibold text-center">제조자 / 납품자</th>
+                <th className="border border-black bg-gray-50 p-3 font-semibold text-center whitespace-normal leading-tight">제조자 /<br />납품자</th>
                 <td className="border border-black p-2 bg-white/80">
                   {!isCustomManufacturer ? (
                     <select
@@ -379,11 +379,11 @@ export default function Home() {
 
               {/* 3행: 용기 수량 / 제조일자 */}
               <tr>
-                <th className="border border-black bg-gray-50 p-3 font-semibold text-center">용기 수량</th>
+                <th className="border border-black bg-gray-50 p-3 font-semibold text-center whitespace-normal leading-tight">용기 수량</th>
                 <td className="border border-black p-2 bg-white/80">
                   <input className="border p-2 w-full rounded" placeholder="예: 10 Can, 5 Drum" value={containerQty} onChange={(e) => setContainerQty(e.target.value)} />
                 </td>
-                <th className="border border-black bg-gray-50 p-3 font-semibold text-center">제조 / 입고 일자</th>
+                <th className="border border-black bg-gray-50 p-3 font-semibold text-center whitespace-normal leading-tight">제조 / 입고<br />일자</th>
                 <td className="border border-black p-2 bg-white/80">
                   <input type="date" className="border p-2 w-full rounded" value={manufactureDate} onChange={(e) => setManufactureDate(e.target.value)} />
                 </td>
@@ -391,7 +391,7 @@ export default function Home() {
 
               {/* 4행: 입고 수량 / 의뢰일 */}
               <tr>
-                <th className="border border-black bg-gray-50 p-3 font-semibold text-center">제조 / 입고 수량</th>
+                <th className="border border-black bg-gray-50 p-3 font-semibold text-center whitespace-normal leading-tight">제조 / 입고<br />수량</th>
                 <td className="border border-black p-2 bg-white/80">
                   <input className="border p-2 w-full rounded" placeholder="예: 200kg, 1,000L" value={totalQty} onChange={(e) => setTotalQty(e.target.value)} />
                 </td>
@@ -403,7 +403,7 @@ export default function Home() {
 
               {/* 5행: 채취량 / 의뢰부서 */}
               <tr>
-                <th className="border border-black bg-gray-50 p-3 font-semibold text-center">채취량</th>
+                <th className="border border-black bg-gray-50 p-3 font-semibold text-center whitespace-normal leading-tight">채취량</th>
                 <td className="border border-black p-2 bg-white/80">
                   {!isCustomSampleQty ? (
                     <select
@@ -427,7 +427,7 @@ export default function Home() {
                     </div>
                   )}
                 </td>
-                <th className="border border-black bg-gray-50 p-3 font-semibold text-center">의뢰부서</th>
+                <th className="border border-black bg-gray-50 p-3 font-semibold text-center whitespace-normal leading-tight">의뢰부서</th>
                 <td className="border border-black p-2 bg-white/80">
                   <select className="border p-2 w-full rounded bg-white" value={department} onChange={(e) => setDepartment(e.target.value)}>
                     <option value="음성공장 합성팀">음성공장 합성팀</option>
@@ -439,7 +439,7 @@ export default function Home() {
 
               {/* 6행: 의뢰자(채취자) / 빈칸 */}
               <tr>
-                <th className="border border-black bg-gray-50 p-3 font-semibold text-center">의뢰자</th>
+                <th className="border border-black bg-gray-50 p-3 font-semibold text-center whitespace-normal leading-tight">의뢰자</th>
                 <td className="border border-black p-2 bg-white/80">
                   <input className="border p-2 w-full rounded" placeholder="이름 입력" value={requester} onChange={(e) => setRequester(e.target.value)} />
                 </td>
@@ -449,7 +449,7 @@ export default function Home() {
 
               {/* 7행: 비고 */}
               <tr>
-                <th className="border border-black bg-gray-50 p-3 font-semibold text-center">비고(참고사항)</th>
+                <th className="border border-black bg-gray-50 p-3 font-semibold text-center whitespace-normal leading-tight">비고<br />(참고사항)</th>
                 <td colSpan={3} className="border border-black p-2 bg-white/80">
                   <input className="border p-2 w-full rounded" placeholder="비고 입력" value={remarks} onChange={(e) => setRemarks(e.target.value)} />
                 </td>
