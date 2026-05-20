@@ -434,7 +434,7 @@ export default function Home() {
               <tr>
                 <th className="border border-black bg-gray-50 p-3 font-semibold text-center whitespace-normal">용기 수량</th>
                 <td className="border border-black p-2 bg-white/80">
-                  <input className="border p-2 w-full rounded" placeholder="예: 10 Can, 5 Drum" value={containerQty} onChange={(e) => setContainerQty(e.target.value)} />
+                  <input className="border p-2 w-full rounded" placeholder="예: 10 Box, 5 D/M" value={containerQty} onChange={(e) => setContainerQty(e.target.value)} />
                 </td>
                 <th className="border border-black bg-gray-50 p-3 font-semibold text-center whitespace-normal">제조 / 입고<br />일자</th>
                 <td className="border border-black p-2 bg-white/80">
@@ -446,7 +446,7 @@ export default function Home() {
               <tr>
                 <th className="border border-black bg-gray-50 p-3 font-semibold text-center whitespace-normal">제조 / 입고<br />수량</th>
                 <td className="border border-black p-2 bg-white/80">
-                  <input className="border p-2 w-full rounded" placeholder="예: 200kg, 1,000L" value={totalQty} onChange={(e) => setTotalQty(e.target.value)} />
+                  <input className="border p-2 w-full rounded" placeholder="예: 20,000g, 40.0kg" value={totalQty} onChange={(e) => setTotalQty(e.target.value)} />
                 </td>
                 <th className="border border-black bg-gray-50 p-3 font-semibold text-center">의뢰일</th>
                 <td className="border border-black p-2 bg-white/80">
