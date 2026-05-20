@@ -245,19 +245,21 @@ export default function Home() {
   // 데이터 저장 및 읽기 모드 전환
   const saveItem = async (id: number) => {
     try {
+      // 데이터베이스 컬럼명에 맞게 키를 수정했습니다.
       const { error } = await supabase.from('result').update({
         manager: editFields.manager,
-        result: editFields.result,
-        date: editFields.date,
-        label_qty: editFields.label_qty
-      }).eq('id', id)
+        judgement: editFields.judgement,      // editFields.result -> judgement
+        judgementDate: editFields.judgementDate,    // editFields.date -> judgementDate
+        labelQty: editFields.labelQty     // editFields.label_qty -> labelQty
+      }).eq('id', id);
       
-      if (error) throw error
-      alert('저장되었습니다.')
-      setEditingId(null)
-      fetchData()
+      if (error) throw error;
+      alert('저장되었습니다.');
+      setEditingId(null);
+      fetchData();
     } catch (error) {
-      alert('저장 실패')
+      console.error("저장 실패 원인:", error);
+      alert('저장 실패');
     }
   }
 
@@ -639,7 +641,7 @@ export default function Home() {
 
                       <td className="border p-2">
                     {isEditing || isEmpty ? (
-                      <select className="border p-1 w-full rounded" value={isEditing ? editFields.result : item.judgement || ''} onChange={(e) => setEditFields({...editFields, result: e.target.value})}>
+                      <select className="border p-1 w-full rounded" value={isEditing ? editFields.judgement : item.judgement || ''} onChange={(e) => setEditFields({...editFields, judgement: e.target.value})}>
                         <option value="">선택</option><option value="적합">적합</option><option value="부적합">부적합</option>
                       </select>
                     ) : (item.judgement)}
@@ -647,13 +649,13 @@ export default function Home() {
 
                   <td className="border p-2">
                     {isEditing || isEmpty ? (
-                      <input type="date" className="border p-1 w-full rounded" value={isEditing ? editFields.date : item.judgementDate || ''} onChange={(e) => setEditFields({...editFields, date: e.target.value})} />
+                      <input type="date" className="border p-1 w-full rounded" value={isEditing ? editFields.judgementDate : item.judgementDate || ''} onChange={(e) => setEditFields({...editFields, judgementDate: e.target.value})} />
                     ) : (item.judgementDate)}
                   </td>
 
                   <td className="border p-2">
                     {isEditing || isEmpty ? (
-                      <select className="border p-1 w-full rounded" value={isEditing ? editFields.label_qty : item.labelQty || '없음'} onChange={(e) => setEditFields({...editFields, label_qty: e.target.value})}>
+                      <select className="border p-1 w-full rounded" value={isEditing ? editFields.labelQty : item.labelQty || '없음'} onChange={(e) => setEditFields({...editFields, labelQty: e.target.value})}>
                         <option value="없음">없음</option>
                         {Array.from({ length: 500 }, (_, i) => (<option key={i + 1} value={String(i + 1)}>{i + 1}매</option>))}
                       </select>
