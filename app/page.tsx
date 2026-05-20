@@ -668,8 +668,11 @@ export default function Home() {
                     <button onClick={() => deleteResultItem(item.id)} className="px-2 py-1 border border-red-500 text-red-500 text-xs rounded hover:bg-red-50">삭제</button>
                   </td>
                 </tr>
-                  ))
-                ) : (<tr><td colSpan={9} className="border p-8 text-gray-500">데이터가 존재하지 않습니다.</td></tr>)
+                  );
+                  })
+                ) : (
+                  <tr><td colSpan={9} className="border p-8 text-gray-500">데이터가 존재하지 않습니다.</td></tr>
+                );
               })()}
             </tbody>
           </table>
