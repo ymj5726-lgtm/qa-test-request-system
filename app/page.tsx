@@ -172,10 +172,11 @@ export default function Home() {
     const itemsPerPage = 15 // 기존 페이지네이션 설정값 (15개)
     const lastPage = Math.ceil((count || 0) / itemsPerPage)
 
-    // 페이지 상태와 탭 상태 업데이트
-    setResultPage(lastPage)
-    setActiveTab('result') // '시험결과통보' 탭으로 자동 전환
-
+    // 페이지 상태와 탭 상태 업데이트 (접수대장 마지막 페이지로 전환)
+    setLedgerPage(lastPage)    // 접수대장의 가장 마지막 페이지로 세팅!
+    setEditingId(null)        // 혹시 남아있을지 모를 수정 모드 초기화
+    setActiveTab('ledger')    // '접수대장' 탭으로 자동 전환
+    
     alert(`저장 완료\n의뢰번호: ${autoRequestNo}\n성적번호: ${autoReportNo}`)
     
     // 폼 리셋
