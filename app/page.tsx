@@ -97,11 +97,21 @@ const [isAuthLoading, setIsAuthLoading] = useState(true); // 로딩 상태
     supabase.auth.getSession().then(({ data: { session } }: any) => {
       setSession(session);
       setIsAuthLoading(false);
+
+      // 🌟 추가 1: 첫 접속 시 이미 로그인이 되어 있다면 데이터 불러오기
+      if (session) {
+        fetchData(); 
+      }
     });
 
-    // 2. 로그인 상태 변화 감지 (여기도 미리 : any 추가)
+    // 2. 로그인 상태 변화 감지 (로그인/로그아웃 순간)
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event: any, session: any) => {
       setSession(session);
+
+      // 🌟 추가 2: 방금 로그인을 성공했다면 데이터 불러오기
+      if (session) {
+        fetchData();
+      }
     });
 
     return () => subscription?.unsubscribe();
