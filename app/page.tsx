@@ -93,14 +93,14 @@ const [isAuthLoading, setIsAuthLoading] = useState(true); // 로딩 상태
     // DB가 준비되지 않았거나 supabase 객체가 없으면 실행하지 않음
     if (!isDbReady || !supabase) return;
 
-    // 1. 현재 로그인 세션 확인
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    // 1. 현재 로그인 세션 확인 (여기에 : any 추가)
+    supabase.auth.getSession().then(({ data: { session } }: any) => {
       setSession(session);
       setIsAuthLoading(false);
     });
 
-    // 2. 로그인 상태 변화 감지
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    // 2. 로그인 상태 변화 감지 (여기도 미리 : any 추가)
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event: any, session: any) => {
       setSession(session);
     });
 
