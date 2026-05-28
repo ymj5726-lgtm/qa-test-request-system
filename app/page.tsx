@@ -54,6 +54,15 @@ export default function Home() {
   const [editFields, setEditFields] = useState<any>({})
 
   const [isCustomManufacturer, setIsCustomManufacturer] = useState(false)
+  
+  const [session, setSession] = useState<any>(null); // 로그인 상태 저장
+const [email, setEmail] = useState('');            // 이메일 입력값
+const [password, setPassword] = useState('');      // 비밀번호 입력값
+const [isAuthLoading, setIsAuthLoading] = useState(true); // 로딩 상태
+  
+  // 비밀번호 변경 관련 상태
+  const [isChangingPassword, setIsChangingPassword] = useState(false);
+  const [newPassword, setNewPassword] = useState('');
 
   // DB 정보
   const SUPABASE_URL = 'https://ksuyhgnpiqnytafmabai.supabase.co'
@@ -79,6 +88,25 @@ export default function Home() {
     loadSupabase()
   }, [])
 
+// [새로 추가할 Auth 확인용 useEffect]
+  useEffect(() => {
+    // DB가 준비되지 않았거나 supabase 객체가 없으면 실행하지 않음
+    if (!isDbReady || !supabase) return;
+
+    // 1. 현재 로그인 세션 확인
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+      setIsAuthLoading(false);
+    });
+
+    // 2. 로그인 상태 변화 감지
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setSession(session);
+    });
+
+    return () => subscription?.unsubscribe();
+  }, [isDbReady]); // <- isDbReady가 true로 바뀔 때 이 useEffect가 실행됩니다!
+  
   const initSupabase = () => {
     try {
       const supabaseJS = (window as any).supabase
@@ -317,6 +345,94 @@ export default function Home() {
     document.body.removeChild(link);
   };
 
+// 1. 로그인 함수
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    if (error) alert('로그인 실패: 이메일이나 비밀번호를 확인해주세요.');
+  };
+
+  // 2. 로그아웃 함수
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+  };
+
+  // 3. 비밀번호 변경 함수
+  const handleChangePassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const { error } = await supabase.auth.updateUser({ password: newPassword });
+    
+    if (error) {
+      alert(`비밀번호 변경 실패: ${error.message}`);
+    } else {
+      alert('비밀번호가 성공적으로 변경되었습니다. 안전을 위해 다시 로그인해주세요.');
+      setIsChangingPassword(false);
+      setNewPassword('');
+      await supabase.auth.signOut(); // 비밀번호 변경 후 강제 로그아웃
+    }
+  };
+
+// --- return 바로 위에 이 가로채기 코드를 넣습니다 ---
+  if (isAuthLoading) {
+    return <div className="flex h-screen items-center justify-center font-bold text-xl">시스템을 불러오는 중입니다...</div>;
+  }
+
+  // 1. 로그인이 안 되어 있을 때 보여줄 화면 (로그인 폼)
+  if (!session) {
+    return (
+      <div className="flex h-screen items-center justify-center bg-gray-100">
+        <form onSubmit={handleLogin} className="bg-white p-8 rounded-lg shadow-md w-96">
+          <h2 className="text-2xl font-bold mb-6 text-center">시험의뢰 시스템 로그인</h2>
+          <div className="mb-4">
+            <label className="block text-gray-700 mb-2 text-sm font-bold">이메일</label>
+            <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} className="border p-2 w-full rounded" required />
+          </div>
+          <div className="mb-6">
+            <label className="block text-gray-700 mb-2 text-sm font-bold">비밀번호</label>
+            <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} className="border p-2 w-full rounded" required />
+          </div>
+          <button type="submit" className="w-full bg-blue-600 text-white p-2 rounded hover:bg-blue-700 font-bold">
+            로그인
+          </button>
+        </form>
+      </div>
+    );
+  }
+
+  // 2. 로그인이 완료된 후 보여줄 진짜 화면
+  return (
+    <div className="p-4">
+      {/* 🎨 상단 로그인 정보 & 비밀번호 변경 UI */}
+      <div className="flex justify-end items-center gap-3 mb-4 bg-gray-50 p-3 rounded border">
+        <span className="text-sm font-semibold text-gray-700">{session.user.email} 님</span>
+        <button onClick={() => setIsChangingPassword(!isChangingPassword)} className="border border-gray-400 px-3 py-1 rounded text-sm hover:bg-gray-200">
+          비밀번호 변경
+        </button>
+        <button onClick={handleLogout} className="bg-red-500 text-white px-3 py-1 rounded text-sm hover:bg-red-600">
+          로그아웃
+        </button>
+      </div>
+
+      {/* 🎨 비밀번호 변경 모달/폼 (비밀번호 변경 버튼을 눌렀을 때만 보임) */}
+      {isChangingPassword && (
+        <div className="mb-6 p-4 border border-blue-300 bg-blue-50 rounded">
+          <form onSubmit={handleChangePassword} className="flex gap-2 items-center">
+            <label className="text-sm font-bold">새 비밀번호:</label>
+            <input 
+              type="password" 
+              value={newPassword} 
+              onChange={(e) => setNewPassword(e.target.value)} 
+              className="border p-1 rounded" 
+              placeholder="새 비밀번호 입력 (6자 이상)" 
+              required 
+              minLength={6}
+            />
+            <button type="submit" className="bg-blue-600 text-white px-3 py-1 rounded text-sm hover:bg-blue-700">변경 저장</button>
+            <button type="button" onClick={() => setIsChangingPassword(false)} className="border border-gray-400 bg-white px-3 py-1 rounded text-sm">취소</button>
+          </form>
+        </div>
+      )}
+  
   return (
     // 🎨 수정사항 2: 부모 컨테이너에 relative 속성을 주고, 내부에 워터마크 이미지 영역을 절대 위치(absolute)로 깔아줍니다.
     <div className="p-10 max-w-6xl mx-auto relative min-h-screen">
