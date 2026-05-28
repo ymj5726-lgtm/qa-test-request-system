@@ -398,12 +398,13 @@ const [isAuthLoading, setIsAuthLoading] = useState(true); // 로딩 상태
       </div>
     );
   }
-
-  // 2. 로그인이 완료된 후 보여줄 진짜 화면
+  
   return (
-    <div className="p-4">
-      {/* 🎨 상단 로그인 정보 & 비밀번호 변경 UI */}
-      <div className="flex justify-end items-center gap-3 mb-4 bg-gray-50 p-3 rounded border">
+    // 🎨 수정사항 2: 부모 컨테이너에 relative 속성을 주고, 내부에 워터마크 이미지 영역을 절대 위치(absolute)로 깔아줍니다.
+    <div className="p-10 max-w-6xl mx-auto relative min-h-screen">
+
+      {/* 🎨 방금 추가한 로그인 정보 & 비밀번호 변경 UI (가장 위에 배치) */}
+      <div className="flex justify-end items-center gap-3 mb-4 bg-white p-3 rounded border shadow-sm relative z-20">
         <span className="text-sm font-semibold text-gray-700">{session.user.email} 님</span>
         <button onClick={() => setIsChangingPassword(!isChangingPassword)} className="border border-gray-400 px-3 py-1 rounded text-sm hover:bg-gray-200">
           비밀번호 변경
@@ -413,29 +414,16 @@ const [isAuthLoading, setIsAuthLoading] = useState(true); // 로딩 상태
         </button>
       </div>
 
-      {/* 🎨 비밀번호 변경 모달/폼 (비밀번호 변경 버튼을 눌렀을 때만 보임) */}
       {isChangingPassword && (
-        <div className="mb-6 p-4 border border-blue-300 bg-blue-50 rounded">
+        <div className="mb-6 p-4 border border-blue-300 bg-blue-50 rounded relative z-20">
           <form onSubmit={handleChangePassword} className="flex gap-2 items-center">
             <label className="text-sm font-bold">새 비밀번호:</label>
-            <input 
-              type="password" 
-              value={newPassword} 
-              onChange={(e) => setNewPassword(e.target.value)} 
-              className="border p-1 rounded" 
-              placeholder="새 비밀번호 입력 (6자 이상)" 
-              required 
-              minLength={6}
-            />
+            <input type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} className="border p-1 rounded" placeholder="새 비밀번호 입력 (6자 이상)" required minLength={6}/>
             <button type="submit" className="bg-blue-600 text-white px-3 py-1 rounded text-sm hover:bg-blue-700">변경 저장</button>
             <button type="button" onClick={() => setIsChangingPassword(false)} className="border border-gray-400 bg-white px-3 py-1 rounded text-sm">취소</button>
           </form>
         </div>
       )}
-  
-  return (
-    // 🎨 수정사항 2: 부모 컨테이너에 relative 속성을 주고, 내부에 워터마크 이미지 영역을 절대 위치(absolute)로 깔아줍니다.
-    <div className="p-10 max-w-6xl mx-auto relative min-h-screen">
       
       {/* 🌟 워터마크 영역 (투명도 opacity-5, 마우스 클릭 통과 pointer-events-none) */}
       <div className="absolute inset-0 z-[-1] flex items-center justify-center pointer-events-none opacity-[0.05]">
@@ -843,5 +831,5 @@ const [isAuthLoading, setIsAuthLoading] = useState(true); // 로딩 상태
         </div>
       )}
     </div>
-  )
+  );
 }
