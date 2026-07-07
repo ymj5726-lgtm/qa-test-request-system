@@ -411,7 +411,7 @@ const [isAuthLoading, setIsAuthLoading] = useState(true); // 로딩 상태
   
   return (
     // 🎨 수정사항 2: 부모 컨테이너에 relative 속성을 주고, 내부에 워터마크 이미지 영역을 절대 위치(absolute)로 깔아줍니다.
-    <div className="p-10 max-w-6xl mx-auto relative min-h-screen">
+    <div className="p-4 max-w-[98%] mx-auto relative min-h-screen">
 
       {/* 🎨 방금 추가한 로그인 정보 & 비밀번호 변경 UI (가장 위에 배치) */}
       <div className="flex justify-end items-center gap-3 mb-4 bg-white p-3 rounded border shadow-sm relative z-20">
@@ -642,7 +642,7 @@ const [isAuthLoading, setIsAuthLoading] = useState(true); // 로딩 상태
             <button onClick={downloadExcel} className="bg-green-600 text-white px-4 py-2 rounded font-bold hover:bg-green-700 ml-2">Excel 다운로드</button>
           </div>
 
-          <table className="w-full border text-sm text-center whitespace-nowrap bg-white">
+          <table className="w-full border text-xs text-center whitespace-nowrap bg-white">
             <thead className="bg-gray-100">
               <tr>
                 <th className="border p-2">No.</th><th className="border p-2">시험항목</th><th className="border p-2">의뢰자</th>
