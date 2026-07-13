@@ -46,7 +46,7 @@ export default function Home() {
   const [searchProduct, setSearchProduct] = useState('')
   const [searchType, setSearchType] = useState('')
 
-  1. 년도 검색 상태 추가
+  // 1. 년도 검색 상태 추가
   const [searchYear, setSearchYear] = useState('')
 
   const [ledgerPage, setLedgerPage] = useState(1)
