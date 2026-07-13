@@ -46,6 +46,9 @@ export default function Home() {
   const [searchProduct, setSearchProduct] = useState('')
   const [searchType, setSearchType] = useState('')
 
+  1. 년도 검색 상태 추가
+  const [searchYear, setSearchYear] = useState('')
+
   const [ledgerPage, setLedgerPage] = useState(1)
   const [resultPage, setResultPage] = useState(1)
   const itemsPerPage = 15
@@ -140,7 +143,7 @@ const [isAuthLoading, setIsAuthLoading] = useState(true); // 로딩 상태
       const { data, error } = await supabase
         .from('requests')
         .select('*')
-        .order('created_at', { ascending: true })
+        .order('created_at', { ascending: flase })
 
       if (error) throw error
       setRequestList(data || [])
@@ -168,7 +171,7 @@ const [isAuthLoading, setIsAuthLoading] = useState(true); // 로딩 상태
   if (!supabase) return alert('데이터베이스 준비 안됨')
   try {
     // 1. 데이터 가져오기 (ID 생성용)
-    const { data: latestData, error: fetchError } = await supabase.from('requests').select('*').order('created_at', { ascending: true })
+    const { data: latestData, error: fetchError } = await supabase.from('requests').select('*').order('created_at', { ascending: false })
     if (fetchError) throw fetchError
     
     const currentList = latestData || []
@@ -285,9 +288,13 @@ const [isAuthLoading, setIsAuthLoading] = useState(true); // 로딩 상태
     return requestList.filter((item) => {
       const productMatch = !searchProduct || item.productName?.toLowerCase().includes(searchProduct.toLowerCase())
       const typeMatch = !searchType || item.sampleType === searchType
-      return productMatch && typeMatch
+      const yearMatch = !searchYear || (item.requestDate && item.requestDate.startsWith(searchYear))
+      return productMatch && typeMatch && yearMatch
     })
   }
+
+  데이터에서 등록된 년도만 뽑아서 중복 제거 및 최신순 정렬
+  const availableYears = Array.from(new Set(requestList.map(item => item.requestDate?.substring(0, 4)).filter(Boolean))).sort().reverse()
 
  // 수정 모드 진입
   const startEdit = (row: any) => {
@@ -634,7 +641,14 @@ const [isAuthLoading, setIsAuthLoading] = useState(true); // 로딩 상태
       {/* 접수대장 탭 */}
       {activeTab === 'ledger' && (
         <div className="overflow-x-auto relative z-10 bg-white/80 p-4 rounded border">
-          <div className="mb-4 flex gap-3">
+          <div className="mb-4 flex gap-3 items-center">
+            {/* 년도 선택 필터 추가 */}
+            <select className="border p-2 rounded bg-white" value={searchYear} onChange={(e) => { setSearchYear(e.target.value); setLedgerPage(1); }}>
+              <option value="">전체 년도</option>
+              {availableYears.map(year => (
+                <option key={year} value={year}>{year}년</option>
+              ))}
+            </select>
             <input type="text" placeholder="품목명 검색" className="border p-2 rounded" value={searchProduct} onChange={(e) => { setSearchProduct(e.target.value); setLedgerPage(1); }} />
             <select className="border p-2 rounded bg-white" value={searchType} onChange={(e) => { setSearchType(e.target.value); setLedgerPage(1); }}>
               <option value="">전체 구분</option><option value="액체원료">액체원료</option><option value="고체원료">고체원료</option><option value="제품">제품</option><option value="중간체">중간체</option>
@@ -709,7 +723,13 @@ const [isAuthLoading, setIsAuthLoading] = useState(true); // 로딩 상태
       {/* 결과통보 탭 */}
       {activeTab === 'result' && (
         <div className="overflow-x-auto relative z-10 bg-white/80 p-4 rounded border">
-          <div className="mb-4 flex gap-3">
+          <div className="mb-4 flex gap-3 items-center">
+            <select className="border p-2 rounded bg-white" value={searchYear} onChange={(e) => { setSearchYear(e.target.value); setResultPage(1); }}>
+              <option value="">전체 년도</option>
+              {availableYears.map(year => (
+                <option key={year} value={year}>{year}년</option>
+              ))}
+            </select>
             <input type="text" placeholder="품목명 검색" className="border p-2 rounded" value={searchProduct} onChange={(e) => { setSearchProduct(e.target.value); setResultPage(1); }} />
             <select className="border p-2 rounded bg-white" value={searchType} onChange={(e) => { setSearchType(e.target.value); setResultPage(1); }}>
               <option value="">전체 구분</option><option value="액체원료">액체원료</option><option value="고체원료">고체원료</option><option value="제품">제품</option><option value="중간체">중간체</option>
