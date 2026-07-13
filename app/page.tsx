@@ -293,7 +293,7 @@ const [isAuthLoading, setIsAuthLoading] = useState(true); // 로딩 상태
     })
   }
 
-  데이터에서 등록된 년도만 뽑아서 중복 제거 및 최신순 정렬
+  // 데이터에서 등록된 년도만 뽑아서 중복 제거 및 최신순 정렬
   const availableYears = Array.from(new Set(requestList.map(item => item.requestDate?.substring(0, 4)).filter(Boolean))).sort().reverse()
 
  // 수정 모드 진입
