@@ -143,7 +143,7 @@ const [isAuthLoading, setIsAuthLoading] = useState(true); // 로딩 상태
       const { data, error } = await supabase
         .from('requests')
         .select('*')
-        .order('created_at', { ascending: flase })
+        .order('created_at', { ascending: false })
 
       if (error) throw error
       setRequestList(data || [])
