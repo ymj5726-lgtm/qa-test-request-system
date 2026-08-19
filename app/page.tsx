@@ -370,6 +370,79 @@ const [isAuthLoading, setIsAuthLoading] = useState(true); // 로딩 상태
     document.body.removeChild(link);
   };
 
+  const downloadResultExcel = () => {
+  // 현재 시험결과통보 화면의 검색 조건이 적용된 데이터
+  const filteredData = getFilteredRequests();
+
+  const headers = [
+    "No.",
+    "시험항목",
+    "성적번호",
+    "품목명",
+    "담당자",
+    "판정결과",
+    "판정일자",
+    "라벨 발행매수"
+  ];
+
+  const formatCell = (cell: unknown) => {
+    let value = String(cell ?? "");
+    const quote = String.fromCharCode(34);
+
+    // 큰따옴표가 있으면 ""로 변경
+    if (value.includes(quote)) {
+      value = value.replace(new RegExp(quote, "g"), quote + quote);
+    }
+
+    // 쉼표, 큰따옴표, 줄바꿈이 있으면 큰따옴표로 감싸기
+    if (
+      value.includes(",") ||
+      value.includes(quote) ||
+      value.includes("\n")
+    ) {
+      return quote + value + quote;
+    }
+
+    return value;
+  };
+
+  const csvRows = filteredData
+    .map((item, index) => [
+      index + 1,
+      formatCell(item.sampleType),
+      formatCell(item.reportNo),
+      formatCell(item.productName),
+      formatCell(item.manager),
+      formatCell(item.judgement),
+      formatCell(item.judgementDate),
+      formatCell(item.labelQty)
+    ].join(","))
+    .join("\n");
+
+  const csvContent =
+    "\uFEFF" +
+    headers.join(",") +
+    "\n" +
+    csvRows;
+
+  const blob = new Blob(
+    [csvContent],
+    { type: "text/csv;charset=utf-8;" }
+  );
+
+  const url = URL.createObjectURL(blob);
+
+  const link = document.createElement("a");
+  link.href = url;
+  link.setAttribute("download", "시험결과통보.csv");
+
+  document.body.appendChild(link);
+  link.click();
+
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
+};
+
 // 1. 로그인 함수
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -745,6 +818,13 @@ const [isAuthLoading, setIsAuthLoading] = useState(true); // 로딩 상태
             <select className="border p-2 rounded bg-white" value={searchType} onChange={(e) => { setSearchType(e.target.value); setResultPage(1); }}>
               <option value="">전체 구분</option><option value="액체원료">액체원료</option><option value="고체원료">고체원료</option><option value="제품">제품</option><option value="중간체">중간체</option><option value="연구품">연구품</option><option value="공정">공정</option><option value="기타">기타</option>
             </select>
+             {/* ✅ 추가 */}
+            <button
+              onClick={downloadResultExcel}
+              className="px-4 py-2 bg-green-600 text-white rounded font-semibold hover:bg-green-700"
+              >
+              Excel 다운로드
+            </button>
           </div>
 
           <table className="w-full border text-center whitespace-nowrap text-sm bg-white">
