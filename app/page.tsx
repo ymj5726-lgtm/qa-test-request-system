@@ -39,13 +39,16 @@ export default function Home() {
   const [judgementDate, setJudgementDate] = useState(today)
   const [isDbReady, setIsDbReady] = useState(false)
   const [dbError, setDbError] = useState<string | null>(null)
-
+  
+  // 🧪 [채취량 및 수기 작성 상태 추가]
   const [sampleQty, setSampleQty] = useState('2g')
   const [isCustomSampleQty, setIsCustomSampleQty] = useState(false)
-
+  
+  // 🔎 [검색 전용 상태] 접수대장과 결과통보의 독립된 검색 제어 (기본값 공란 및 전체구분)
   const [searchProduct, setSearchProduct] = useState('')
   const [searchType, setSearchType] = useState('')
 
+  // 📄 [페이지네이션 전용 상태] 한 페이지에 15행씩 출력 제어
   // 1. 년도 검색 상태 추가
   const [searchYear, setSearchYear] = useState('')
 
@@ -67,6 +70,7 @@ const [isAuthLoading, setIsAuthLoading] = useState(true); // 로딩 상태
   const [isChangingPassword, setIsChangingPassword] = useState(false);
   const [newPassword, setNewPassword] = useState('');
 
+  // ⚠️ 중요: 발급받으신 Supabase URL과 복사하신 Anon Key를 입력해 주세요!
   // DB 정보
   const SUPABASE_URL = 'https://ksuyhgnpiqnytafmabai.supabase.co'
   const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtzdXloZ25waXFueXRhZm1hYmFpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkxMTMyOTksImV4cCI6MjA5NDY4OTI5OX0.keZTkm7kWzq6ftrDo3xNZEImnWZnUT8CXYl2vDzkg_M'
@@ -154,9 +158,13 @@ const [isAuthLoading, setIsAuthLoading] = useState(true); // 로딩 상태
 
   const generateRequestNo = (currentSampleType: string, targetDate: string, currentList: any[]) => {
     if (!targetDate) return ''
+
+    // 1. 날짜에서 하이픈(-) 등을 제거하고 숫자만 추출 후 YYMMDD 포맷팅 (예: "2026-05-19" -> "260519")
     const cleanDate = targetDate.replace(/[^0-9]/g, '')
     const datePart = cleanDate.substring(2, 8) 
-    let prefixMap: { [key: string]: string } = { 액체원료: 'ER', 고체원료: 'ER', 제품: 'EP', 중간체: 'EB' }
+    
+    // 2. 샘플 유형별 접두사 매핑 ('E' + 품목코드)
+    let prefixMap: { [key: string]: string } = { 액체원료: 'ER', 고체원료: 'ER', 제품: 'EP', 중간체: 'EB', 연구품: 'EPR', 공정: 'EIP', 기타: 'ET' }
     let prefix = prefixMap[currentSampleType] || 'ER'
     const fullPattern = prefix + datePart 
     const list = Array.isArray(currentList) ? currentList : []
@@ -515,6 +523,9 @@ const [isAuthLoading, setIsAuthLoading] = useState(true); // 로딩 상태
                     <option value="고체원료">고체원료</option>
                     <option value="중간체">중간체</option>
                     <option value="제품">제품</option>
+                    <option value="연구품">연구품</option>
+                    <option value="공정">공정</option>
+                    <option value="기타">기타</option>
                   </select>
                 </td>
               </tr>
@@ -651,7 +662,7 @@ const [isAuthLoading, setIsAuthLoading] = useState(true); // 로딩 상태
             </select>
             <input type="text" placeholder="품목명 검색" className="border p-2 rounded" value={searchProduct} onChange={(e) => { setSearchProduct(e.target.value); setLedgerPage(1); }} />
             <select className="border p-2 rounded bg-white" value={searchType} onChange={(e) => { setSearchType(e.target.value); setLedgerPage(1); }}>
-              <option value="">전체 구분</option><option value="액체원료">액체원료</option><option value="고체원료">고체원료</option><option value="제품">제품</option><option value="중간체">중간체</option>
+              <option value="">전체 구분</option><option value="액체원료">액체원료</option><option value="고체원료">고체원료</option><option value="제품">제품</option><option value="중간체">중간체</option><option value="연구품">연구품</option><option value="공정">공정</option><option value="기타">기타</option>
             </select>
             <button onClick={downloadExcel} className="bg-green-600 text-white px-4 py-2 rounded font-bold hover:bg-green-700 ml-2">Excel 다운로드</button>
           </div>
@@ -677,7 +688,7 @@ const [isAuthLoading, setIsAuthLoading] = useState(true); // 로딩 상태
                     return (
                       <tr key={item.id || index} className="hover:bg-gray-50">
                         <td className="border p-2">{startIndex + index + 1}</td>
-                        <td className="border p-2">{isEditing ? <select className="border p-1 rounded bg-white text-xs" value={editFields.sampleType || ''} onChange={(e) => handleEditChange('sampleType', e.target.value)}><option value="액체원료">액체원료</option><option value="고체원료">고체원료</option><option value="중간체">중간체</option><option value="제품">제품</option></select> : item.sampleType}</td>
+                        <td className="border p-2">{isEditing ? <select className="border p-1 rounded bg-white text-xs" value={editFields.sampleType || ''} onChange={(e) => handleEditChange('sampleType', e.target.value)}><option value="액체원료">액체원료</option><option value="고체원료">고체원료</option><option value="중간체">중간체</option><option value="제품">제품</option><option value="연구품">연구품</option><option value="공정">공정</option><option value="기타">기타</option></select> : item.sampleType}</td>
                         <td className="border p-2">{isEditing ? <input type="text" className="border p-1 rounded text-xs w-20" value={editFields.requester || ''} onChange={(e) => handleEditChange('requester', e.target.value)} /> : item.requester || '-'}</td>
                         <td className="border p-2">{isEditing ? <input type="date" className="border p-1 rounded text-xs" value={editFields.requestDate || ''} onChange={(e) => handleEditChange('requestDate', e.target.value)} /> : item.requestDate}</td>
                         <td className="border p-2 font-mono text-xs">{item.requestNo}</td>
@@ -732,7 +743,7 @@ const [isAuthLoading, setIsAuthLoading] = useState(true); // 로딩 상태
             </select>
             <input type="text" placeholder="품목명 검색" className="border p-2 rounded" value={searchProduct} onChange={(e) => { setSearchProduct(e.target.value); setResultPage(1); }} />
             <select className="border p-2 rounded bg-white" value={searchType} onChange={(e) => { setSearchType(e.target.value); setResultPage(1); }}>
-              <option value="">전체 구분</option><option value="액체원료">액체원료</option><option value="고체원료">고체원료</option><option value="제품">제품</option><option value="중간체">중간체</option>
+              <option value="">전체 구분</option><option value="액체원료">액체원료</option><option value="고체원료">고체원료</option><option value="제품">제품</option><option value="중간체">중간체</option><option value="연구품">연구품</option><option value="공정">공정</option><option value="기타">기타</option>
             </select>
           </div>
 
