@@ -140,8 +140,8 @@ const [isAuthLoading, setIsAuthLoading] = useState(true); // 로딩 상태
     }
   }
 
-  const fetchData = async () => {
-    if (!supabase) return
+  const fetchData = async (): Promise<any[]> => {
+    if (!supabase) return []
     setDbError(null)
     try {
       const { data, error } = await supabase
@@ -150,9 +150,12 @@ const [isAuthLoading, setIsAuthLoading] = useState(true); // 로딩 상태
         .order('created_at', { ascending: false })
 
       if (error) throw error
-      setRequestList(data || [])
+      const rows = data || []
+      setRequestList(rows)
+      return rows
     } catch (error: any) {
       setDbError('데이터 로드 실패')
+      return []
     }
   }
 
@@ -206,25 +209,29 @@ const [isAuthLoading, setIsAuthLoading] = useState(true); // 로딩 상태
       requestNo: autoRequestNo,
       reportNo: autoReportNo,
       sampleQty: sampleQty || '',
+      // 선검증 샘플 전달 정보 기본값
+      preValidationDeliveryStatus: '미전달',
     }
 
     // 2. 데이터 저장
     const { error: insertError } = await supabase.from('requests').insert([newItem])
     if (insertError) throw insertError
 
-    // 3. 리스트 새로고침
-    await fetchData()
+    // 3. 리스트 새로고침 후, 정렬된 목록에서 저장한 의뢰가 있는 페이지 계산
+    const refreshedList = await fetchData()
 
-    // 4. [추가] 마지막 페이지 계산 및 이동
-    // 현재 총 데이터 개수를 조회 (정확한 페이지 계산을 위해)
-    const { count } = await supabase.from('requests').select('*', { count: 'exact', head: true })
-    const itemsPerPage = 15 // 기존 페이지네이션 설정값 (15개)
-    const lastPage = Math.ceil((count || 0) / itemsPerPage)
+    // 새 의뢰를 바로 확인할 수 있도록 기존 검색 조건 초기화
+    setSearchProduct('')
+    setSearchType('')
+    setSearchYear('')
 
-    // 페이지 상태와 탭 상태 업데이트 (접수대장 마지막 페이지로 전환)
-    setLedgerPage(lastPage)    // 접수대장의 가장 마지막 페이지로 세팅!
-    setEditingId(null)        // 혹시 남아있을지 모를 수정 모드 초기화
-    setActiveTab('ledger')    // '접수대장' 탭으로 자동 전환
+    const sortedList = sortLedgerRequests(refreshedList)
+    const savedIndex = sortedList.findIndex((item: any) => item.requestNo === autoRequestNo)
+    setLedgerPage(savedIndex >= 0 ? Math.floor(savedIndex / itemsPerPage) + 1 : 1)
+
+    // 페이지 상태와 탭 상태 업데이트
+    setEditingId(null)
+    setActiveTab('ledger')
     
     alert(`저장 완료\n의뢰번호: ${autoRequestNo}\n성적번호: ${autoReportNo}`)
     
@@ -238,14 +245,14 @@ const [isAuthLoading, setIsAuthLoading] = useState(true); // 로딩 상태
   }
 }
 
-  const deleteItem = async (id: any, index: number) => {
+  const deleteItem = async (id: any) => {
     if (!supabase) return
     const confirmDelete = window.confirm('선택한 의뢰를 삭제하시겠습니까?')
     if (!confirmDelete) return
     try {
       const { error } = await supabase.from('requests').delete().eq('id', id)
       if (error) throw error
-      const updatedList = requestList.filter((_, i) => i !== index)
+      const updatedList = requestList.filter((item) => item.id !== id)
       setRequestList(updatedList)
     } catch (error: any) {
       alert('삭제 실패')
@@ -292,13 +299,39 @@ const [isAuthLoading, setIsAuthLoading] = useState(true); // 로딩 상태
     }
   }
 
-  const getFilteredRequests = () => {
-    return requestList.filter((item) => {
+  const getFilteredRequests = (sourceList: any[] = requestList) => {
+    return sourceList.filter((item) => {
       const productMatch = !searchProduct || item.productName?.toLowerCase().includes(searchProduct.toLowerCase())
       const typeMatch = !searchType || item.sampleType === searchType
       const yearMatch = !searchYear || (item.requestDate && item.requestDate.startsWith(searchYear))
       return productMatch && typeMatch && yearMatch
     })
+  }
+
+  // 접수대장 정렬: 의뢰일 최신순, 같은 날짜는 의뢰번호 오름차순
+  const sortLedgerRequests = (items: any[]) => {
+    return [...items].sort((a, b) => {
+      const dateA = String(a.requestDate ?? '')
+      const dateB = String(b.requestDate ?? '')
+      const dateCompare = dateB.localeCompare(dateA) // 최신 날짜가 먼저
+      if (dateCompare !== 0) return dateCompare
+
+      return String(a.requestNo ?? '').localeCompare(
+        String(b.requestNo ?? ''),
+        'en',
+        { numeric: true, sensitivity: 'base' }
+      )
+    })
+  }
+
+  // 접수대장 표시 및 엑셀 다운로드에 동일한 정렬 적용
+  const getSortedLedgerRequests = (sourceList: any[] = requestList) => {
+    return sortLedgerRequests(getFilteredRequests(sourceList))
+  }
+
+  // 시험결과통보도 접수대장과 같은 기준(의뢰일 최신순, 같은 날짜는 의뢰번호 오름차순) 적용
+  const getSortedResultRequests = (sourceList: any[] = requestList) => {
+    return sortLedgerRequests(getFilteredRequests(sourceList))
   }
 
   // 데이터에서 등록된 년도만 뽑아서 중복 제거 및 최신순 정렬
@@ -307,24 +340,41 @@ const [isAuthLoading, setIsAuthLoading] = useState(true); // 로딩 상태
  // 수정 모드 진입
   const startEdit = (row: any) => {
     setEditingId(row.id)
-    setEditFields({ ...row })
+    setEditFields({ ...row, _editingRowId: row.id })
+  }
+
+  // 결과통보에서 행별 편집값을 분리해 다른 행의 입력값이 섞이지 않도록 처리
+  const handleResultFieldChange = (row: any, field: string, value: any) => {
+    setEditFields((prev: any) => ({
+      ...(prev._editingRowId === row.id ? prev : row),
+      _editingRowId: row.id,
+      [field]: value,
+    }))
   }
 
   // 데이터 저장 및 읽기 모드 전환
-  const saveItem = async (id: number) => {
+  const saveItem = async (id: number, row: any) => {
     try {
+      const fields = editFields._editingRowId === id
+        ? { ...row, ...editFields }
+        : row
+
       // 데이터베이스 컬럼명에 맞게 키를 수정했습니다.
       const { error } = await supabase.from('requests').update({
-        manager: editFields.manager,
-        judgement: editFields.judgement,      // editFields.result -> judgement
-        judgementDate: editFields.judgementDate,    // editFields.date -> judgementDate
-        labelQty: editFields.labelQty     // editFields.label_qty -> labelQty
+        manager: fields.manager ?? '',
+        judgement: fields.judgement ?? '',
+        judgementDate: fields.judgementDate || null,
+        labelQty: fields.labelQty ?? '없음',
+        preValidationDeliveryStatus: fields.preValidationDeliveryStatus ?? '미전달',
+        // date 타입 컬럼에는 빈 문자열 대신 null 저장
+        preValidationDeliveryDate: fields.preValidationDeliveryDate || null,
       }).eq('id', id);
       
       if (error) throw error;
+      await fetchData();
       alert('저장되었습니다.');
       setEditingId(null);
-      fetchData();
+      setEditFields({});
     } catch (error) {
       console.error("저장 실패 원인:", error);
       alert('저장 실패');
@@ -344,7 +394,7 @@ const [isAuthLoading, setIsAuthLoading] = useState(true); // 로딩 상태
   }
   
   const downloadExcel = () => {
-    const filteredData = getFilteredRequests();
+    const filteredData = getSortedLedgerRequests();
     const headers = ["No", "시험항목", "의뢰자", "의뢰일", "의뢰번호", "성적번호", "품명", "제조번호", "제조자/납품자", "채취량", "제조/입고 일자", "용기수량", "입고수량", "의뢰부서", "비고"];
     const formatCell = (cell: any) => {
       let value = String(cell || "");
@@ -372,7 +422,7 @@ const [isAuthLoading, setIsAuthLoading] = useState(true); // 로딩 상태
 
   const downloadResultExcel = () => {
   // 현재 시험결과통보 화면의 검색 조건이 적용된 데이터
-  const filteredData = getFilteredRequests();
+  const filteredData = getSortedResultRequests();
 
   const headers = [
     "No.",
@@ -382,7 +432,9 @@ const [isAuthLoading, setIsAuthLoading] = useState(true); // 로딩 상태
     "담당자",
     "판정결과",
     "판정일자",
-    "라벨 발행매수"
+    "라벨 발행매수",
+    "선검증 샘플 전달여부",
+    "선검증 샘플 전달일자"
   ];
 
   const formatCell = (cell: unknown) => {
@@ -415,7 +467,9 @@ const [isAuthLoading, setIsAuthLoading] = useState(true); // 로딩 상태
       formatCell(item.manager),
       formatCell(item.judgement),
       formatCell(item.judgementDate),
-      formatCell(item.labelQty)
+      formatCell(item.labelQty),
+      formatCell(item.preValidationDeliveryStatus ?? '미전달'),
+      formatCell(item.preValidationDeliveryDate ?? '')
     ].join(","))
     .join("\n");
 
@@ -752,7 +806,7 @@ const [isAuthLoading, setIsAuthLoading] = useState(true); // 로딩 상태
             </thead>
             <tbody>
               {(() => {
-                const filtered = getFilteredRequests()
+                const filtered = getSortedLedgerRequests()
                 const startIndex = (ledgerPage - 1) * itemsPerPage
                 const paginated = filtered.slice(startIndex, startIndex + itemsPerPage)
                 return paginated.length > 0 ? (
@@ -780,7 +834,7 @@ const [isAuthLoading, setIsAuthLoading] = useState(true); // 로딩 상태
                             {isEditing ? (
                               <><button onClick={() => saveEditing(item.id)} className="border bg-blue-600 text-white px-2 py-1 rounded hover:bg-blue-700 text-xs font-semibold">저장</button><button onClick={() => setEditingId(null)} className="border bg-gray-100 text-gray-700 px-2 py-1 rounded hover:bg-gray-200 text-xs">취소</button></>
                             ) : (
-                              <><button onClick={() => startEditing(item)} className="border bg-gray-50 text-gray-700 px-2 py-1 rounded hover:bg-gray-150 text-xs font-semibold">수정</button><button onClick={() => deleteItem(item.id, startIndex + index)} className="border bg-red-50 text-red-600 px-2 py-1 rounded hover:bg-red-100 text-xs">삭제</button></>
+                              <><button onClick={() => startEditing(item)} className="border bg-gray-50 text-gray-700 px-2 py-1 rounded hover:bg-gray-150 text-xs font-semibold">수정</button><button onClick={() => deleteItem(item.id)} className="border bg-red-50 text-red-600 px-2 py-1 rounded hover:bg-red-100 text-xs">삭제</button></>
                             )}
                           </div>
                         </td>
@@ -792,13 +846,13 @@ const [isAuthLoading, setIsAuthLoading] = useState(true); // 로딩 상태
             </tbody>
           </table>
           {/* 페이지네이션 생략 없이 동일 */}
-          {getFilteredRequests().length > itemsPerPage && (
+          {getSortedLedgerRequests().length > itemsPerPage && (
             <div className="flex justify-center items-center gap-2 mt-6">
               <button onClick={() => setLedgerPage(prev => Math.max(prev - 1, 1))} disabled={ledgerPage === 1} className="px-3 py-1 border rounded bg-white hover:bg-gray-50 disabled:opacity-50 text-sm font-semibold">이전</button>
-              {Array.from({ length: Math.ceil(getFilteredRequests().length / itemsPerPage) }, (_, idx) => (
+              {Array.from({ length: Math.ceil(getSortedLedgerRequests().length / itemsPerPage) }, (_, idx) => (
                 <button key={idx + 1} onClick={() => setLedgerPage(idx + 1)} className={`px-3 py-1 border rounded text-sm font-semibold ${ledgerPage === idx + 1 ? 'bg-black text-white' : 'bg-white hover:bg-gray-50'}`}>{idx + 1}</button>
               ))}
-              <button onClick={() => setLedgerPage(prev => Math.min(prev + 1, Math.ceil(getFilteredRequests().length / itemsPerPage)))} disabled={ledgerPage === Math.ceil(getFilteredRequests().length / itemsPerPage)} className="px-3 py-1 border rounded bg-white hover:bg-gray-50 disabled:opacity-50 text-sm font-semibold">다음</button>
+              <button onClick={() => setLedgerPage(prev => Math.min(prev + 1, Math.ceil(getSortedLedgerRequests().length / itemsPerPage)))} disabled={ledgerPage === Math.ceil(getSortedLedgerRequests().length / itemsPerPage)} className="px-3 py-1 border rounded bg-white hover:bg-gray-50 disabled:opacity-50 text-sm font-semibold">다음</button>
             </div>
           )}
         </div>
@@ -839,12 +893,13 @@ const [isAuthLoading, setIsAuthLoading] = useState(true); // 로딩 상태
                 <th className="border p-2">판정결과</th>
                 <th className="border p-2">판정일자</th>
                 <th className="border p-2">라벨 발행매수</th>
+                <th className="border p-2 min-w-[220px]">선검증 샘플 전달여부 및 일자</th>
                 <th className="border p-2">관리</th>
               </tr>
             </thead>
             <tbody>
               {(() => {
-                const filtered = getFilteredRequests()
+                const filtered = getSortedResultRequests()
                 const startIndex = (resultPage - 1) * itemsPerPage
                 const paginated = filtered.slice(startIndex, startIndex + itemsPerPage)
 
@@ -866,8 +921,8 @@ const [isAuthLoading, setIsAuthLoading] = useState(true); // 로딩 상태
                         {isEditing || isEmpty ? (
                       <select
                         className="border p-1 w-full rounded bg-white text-blue-700 font-semibold"
-                        value={isEditing || isEmpty ? (editFields.manager ?? item.manager ?? '') : (item.manager ?? '')}
-                        onChange={(e) => setEditFields((prev: any) => ({ ...prev, manager: e.target.value }))}
+                        value={editFields._editingRowId === item.id ? (editFields.manager ?? item.manager ?? '') : (item.manager ?? '')}
+                        onChange={(e) => handleResultFieldChange(item, 'manager', e.target.value)}
                         >
                         <option value="">담당자 선택</option>
                         <option value="김정현">김정현</option>
@@ -885,8 +940,8 @@ const [isAuthLoading, setIsAuthLoading] = useState(true); // 로딩 상태
                         {isEditing || isEmpty ? (
                       <select 
                         className="border p-1 w-full rounded" 
-                        value={isEditing || isEmpty ? (editFields.judgement ?? item.judgement ?? '') : (item.judgement ?? '')} 
-                        onChange={(e) => setEditFields((prev: any) => ({ ...prev, judgement: e.target.value }))}
+                        value={editFields._editingRowId === item.id ? (editFields.judgement ?? item.judgement ?? '') : (item.judgement ?? '')} 
+                        onChange={(e) => handleResultFieldChange(item, 'judgement', e.target.value)}
                         >
                         <option value="">선택</option>
                         <option value="적합">적합</option>
@@ -901,8 +956,8 @@ const [isAuthLoading, setIsAuthLoading] = useState(true); // 로딩 상태
                       <input 
                         type="date" 
                         className="border p-1 w-full rounded" 
-                        value={isEditing || isEmpty ? (editFields.judgementDate ?? item.judgementDate ?? '') : (item.judgementDate ?? '')} 
-                        onChange={(e) => setEditFields((prev: any) => ({ ...prev, judgementDate: e.target.value }))} 
+                        value={editFields._editingRowId === item.id ? (editFields.judgementDate ?? item.judgementDate ?? '') : (item.judgementDate ?? '')} 
+                        onChange={(e) => handleResultFieldChange(item, 'judgementDate', e.target.value)} 
                         />
                     ) : (item.judgementDate)}
                       </td>
@@ -912,41 +967,77 @@ const [isAuthLoading, setIsAuthLoading] = useState(true); // 로딩 상태
                         {isEditing || isEmpty ? (
                       <select 
                         className="border p-1 w-full rounded" 
-                        value={isEditing || isEmpty ? (editFields.labelQty ?? item.labelQty ?? '없음') : (item.labelQty ?? '없음')} 
-                        onChange={(e) => setEditFields((prev: any) => ({ ...prev, labelQty: e.target.value }))}
+                        value={editFields._editingRowId === item.id ? (editFields.labelQty ?? item.labelQty ?? '없음') : (item.labelQty ?? '없음')} 
+                        onChange={(e) => handleResultFieldChange(item, 'labelQty', e.target.value)}
                         >
                         <option value="없음">없음</option>
                         {Array.from({ length: 500 }, (_, i) => (<option key={i + 1} value={String(i + 1)}>{i + 1}매</option>))}
                       </select>
                     ) : (item.labelQty)}
                       </td>
+
+                      {/* 선검증 샘플 전달여부 및 전달일자 */}
+                      <td className="border p-2 min-w-[220px]">
+                        {isEditing || isEmpty ? (
+                          <div className="flex flex-col gap-2 min-w-[190px]">
+                            <select
+                              className="border p-1 w-full rounded bg-white"
+                              value={editFields._editingRowId === item.id ? (editFields.preValidationDeliveryStatus ?? item.preValidationDeliveryStatus ?? '미전달') : (item.preValidationDeliveryStatus ?? '미전달')}
+                              onChange={(e) => handleResultFieldChange(item, 'preValidationDeliveryStatus', e.target.value)}
+                            >
+                              <option value="미전달">미전달</option>
+                              <option value="전달">전달</option>
+                            </select>
+                            <div className="flex items-center gap-2">
+                              <label className="text-xs text-gray-600 whitespace-nowrap">전달일자</label>
+                              <input
+                                type="date"
+                                className="border p-1 rounded w-full min-w-0"
+                                value={editFields._editingRowId === item.id ? (editFields.preValidationDeliveryDate ?? item.preValidationDeliveryDate ?? '') : (item.preValidationDeliveryDate ?? '')}
+                                onChange={(e) => handleResultFieldChange(item, 'preValidationDeliveryDate', e.target.value)}
+                              />
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="flex flex-col gap-1">
+                            <span className={item.preValidationDeliveryStatus === '전달' ? 'font-semibold text-green-700' : 'text-gray-600'}>
+                              {item.preValidationDeliveryStatus ?? '미전달'}
+                            </span>
+                            <span className="text-xs text-gray-600">
+                              전달일자: {item.preValidationDeliveryDate || '-'}
+                            </span>
+                          </div>
+                        )}
+                      </td>
                 
-                  <td className="border p-2 flex gap-1 justify-center">
+                  <td className="border p-2">
+                    <div className="flex gap-1 justify-center">
                     {isEditing || isEmpty ? (
-                      <button onClick={() => saveItem(item.id)} className="px-2 py-1 bg-green-600 text-white text-xs rounded">저장</button>
+                      <button onClick={() => saveItem(item.id, item)} className="px-2 py-1 bg-green-600 text-white text-xs rounded">저장</button>
                     ) : (
                       <button onClick={() => startEdit(item)} className="px-2 py-1 border border-black text-xs rounded hover:bg-gray-100">수정</button>
                     )}
                     <button onClick={() => deleteResultItem(item.id)} className="px-2 py-1 border border-red-500 text-red-500 text-xs rounded hover:bg-red-50">삭제</button>
+                    </div>
                   </td>
                 </tr>
               );
             })
           ) : (
-            <tr><td colSpan={9} className="border p-8 text-gray-500">데이터가 존재하지 않습니다.</td></tr>
+            <tr><td colSpan={10} className="border p-8 text-gray-500">데이터가 존재하지 않습니다.</td></tr>
           );
         })()}
       </tbody>
     </table>
           
           {/* 페이지네이션 UI */}
-          {getFilteredRequests().length > itemsPerPage && (
+          {getSortedResultRequests().length > itemsPerPage && (
       <div className="flex justify-center items-center gap-2 mt-6">
         <button onClick={() => setResultPage(prev => Math.max(prev - 1, 1))} disabled={resultPage === 1} className="px-3 py-1 border rounded bg-white hover:bg-gray-50 disabled:opacity-50">이전</button>
-        {Array.from({ length: Math.ceil(getFilteredRequests().length / itemsPerPage) }, (_, idx) => (
+        {Array.from({ length: Math.ceil(getSortedResultRequests().length / itemsPerPage) }, (_, idx) => (
           <button key={idx + 1} onClick={() => setResultPage(idx + 1)} className={`px-3 py-1 border rounded ${resultPage === idx + 1 ? 'bg-black text-white' : 'bg-white'}`}>{idx + 1}</button>
         ))}
-        <button onClick={() => setResultPage(prev => Math.min(prev + 1, Math.ceil(getFilteredRequests().length / itemsPerPage)))} disabled={resultPage === Math.ceil(getFilteredRequests().length / itemsPerPage)} className="px-3 py-1 border rounded bg-white hover:bg-gray-50 disabled:opacity-50">다음</button>
+        <button onClick={() => setResultPage(prev => Math.min(prev + 1, Math.ceil(getSortedResultRequests().length / itemsPerPage)))} disabled={resultPage === Math.ceil(getSortedResultRequests().length / itemsPerPage)} className="px-3 py-1 border rounded bg-white hover:bg-gray-50 disabled:opacity-50">다음</button>
       </div>
           )}
         </div>
