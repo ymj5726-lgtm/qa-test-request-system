@@ -468,8 +468,8 @@ const [isAuthLoading, setIsAuthLoading] = useState(true); // 로딩 상태
       formatCell(item.judgement),
       formatCell(item.judgementDate),
       formatCell(item.labelQty),
-      formatCell(item.preValidationDeliveryStatus ?? '미전달'),
-      formatCell(item.preValidationDeliveryDate ?? '')
+      formatCell(item.sampleType === '제품' ? (item.preValidationDeliveryStatus ?? '미전달') : '해당없음'),
+      formatCell(item.sampleType === '제품' ? (item.preValidationDeliveryDate ?? '') : '해당없음')
     ].join(","))
     .join("\n");
 
@@ -976,9 +976,11 @@ const [isAuthLoading, setIsAuthLoading] = useState(true); // 로딩 상태
                     ) : (item.labelQty)}
                       </td>
 
-                      {/* 선검증 샘플 전달여부 및 전달일자 */}
-                      <td className="border p-2 min-w-[220px]">
-                        {isEditing || isEmpty ? (
+                      {/* 선검증 샘플 전달여부 및 전달일자: 제품에만 해당 */}
+                      <td className="border p-2 min-w-[220px] text-center align-middle">
+                        {item.sampleType !== '제품' ? (
+                          <span className="text-gray-500">해당없음</span>
+                        ) : isEditing || isEmpty ? (
                           <div className="flex flex-col gap-2 min-w-[190px]">
                             <select
                               className="border p-1 w-full rounded bg-white"
